@@ -33,6 +33,50 @@ const EVENT_KEYWORDS = {
   scott_cook: ['scott cook'],
 };
 
+// RIC June NY 2026 Summit attendees (from official attendee list)
+const RIC_JUNE_2026 = new Set([
+  'raul valentin','kayla oliver','zulfi jeevanjee','kamal natarajan',
+  'mark hagan','baker smith','john balsavage','leena patel',
+  'erik roth','leigh-ann russell','leigh ann russell','shannon hobbs',
+  'aimee george','charlene stoessel','miriam o\'sullivan','miriam osullivan',
+  'tyler derr','andrea markstrom','curt garner',
+  'gianpaolo barozzi','srini namineni','kelly jones',
+  'afshean talasaz','kathryn diaz','kamran ziaee',
+  'matthew harrison','michele parks','scott letourneau','marianne johnson',
+  'laura trostle','laura walsh','john roese',
+  'manjeet singh','arjun prakash','jennifer christie',
+  'amy gleason','alison magyari','kevin adams',
+  'motti finkelstein','sue quackenbush','matan grinberg',
+  'ayesha johnson','nick lichtenberg','jacqueline nevils',
+  'robert toohey','sushma panuru','jacqueline arthur',
+  'marco argenti','pravir gupta','jonny leroy',
+  'luis paarup','juan martinez','laura fuentes',
+  'matt candy','mike johnson','robert oh',
+  'nicholas parrotta','richard burke','luani alvarado',
+  'alanna klassen jamjoum','susannah greenberg','jennifer charters',
+  'chandu nair','yoshkin ankin','kathy flynn',
+  'rashmi kumar','betty larson','talvis love',
+  'deepa soni','joanne rodgers','becky schmitt',
+  'sirsij peshin','osvaldo vidal','trey whitney',
+  'quinn scripter','scott case','eric pulier',
+  'mike ferris','spiros xanthos','girish ganesan',
+  'justin magruder','darren hebert','becca hagen',
+  'nick tzitzon','josh newman','dave weinstein',
+  'helen walters','gil tiamsic','anup malani',
+  'rob locascio','stephanie fehr','christa emerson',
+  'jon couture','kathleen noreau','nick quigley',
+  'paul hlivko','julia anderson','paul cao',
+  'wendy bounds','tom libretto','nate yohannes',
+  'marc gilbert','julie fuller',
+]);
+
+function normalizeNameForRIC(name) {
+  return name.toLowerCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g, '') // strip accents
+    .replace(/[^a-z\s-]/g, '')
+    .trim();
+}
+
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 async function hsPost(url, body, retries = 6) {
@@ -196,7 +240,9 @@ function shapeContact(c, openDealIds, eventMap) {
   const lastContact = p.notes_last_contacted || p.hs_email_last_send_date || null;
   const days = daysSince(lastContact);
   const fortuneRank = getFortunRank(p.company);
-  const events = eventMap[c.id] || { ric: false, ceo_dinner: false, scott_cook: false };
+  const events = { ...(eventMap[c.id] || { ric: false, ceo_dinner: false, scott_cook: false }) };
+  const normalizedName = normalizeNameForRIC(`${p.firstname || ''} ${p.lastname || ''}`.trim());
+  if (RIC_JUNE_2026.has(normalizedName)) events.ric = true;
   const contact = {
     id: c.id,
     name: `${p.firstname || ''} ${p.lastname || ''}`.trim(),
