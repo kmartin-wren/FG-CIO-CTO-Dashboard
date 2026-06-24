@@ -18,7 +18,7 @@ const CONTACT_PROPS = [
   'firstname', 'lastname', 'jobtitle', 'company',
   'mobilephone', 'phone', 'hs_lead_status', 'hubspot_owner_id',
   'notes_last_contacted', 'hs_email_last_send_date', 'num_associated_deals',
-  'hubspotscore',
+  'hubspotscore', 'rqkf__c', 'lead_stages', 'how_keith_s_met_him',
 ];
 
 // Deal stages in main pipeline (17259398)
@@ -168,6 +168,8 @@ function priorityScore(c) {
   if (c.events.ric) score += 20;
   if (c.events.ceo_dinner) score += 15;
   if (c.events.scott_cook) score += 15;
+  const rq = parseFloat(c.rqScore);
+  if (!isNaN(rq)) score += Math.min(rq * 3, 15); // RQ up to 15pts
   if (c.lastContactedDays !== null) {
     if (c.lastContactedDays <= 30) score += 25;
     else if (c.lastContactedDays <= 90) score += 10;
@@ -201,7 +203,7 @@ function shapeContact(c, openDealIds, eventMap) {
     company: p.company || '',
     mobile: p.mobilephone || '',
     phone: p.phone || '',
-    leadStatus: p.hs_lead_status || '',
+    leadStatus: p.hs_lead_status || p.lead_stages || '',
     lastContactedDays: days,
     lastContactedDate: lastContact,
     active: days !== null && days <= 30,
@@ -210,6 +212,8 @@ function shapeContact(c, openDealIds, eventMap) {
     fortuneRank,
     events,
     hubspotScore: parseInt(p.hubspotscore || '0'),
+    rqScore: p.rqkf__c || '',
+    howMet: p.how_keith_s_met_him || '',
     createdAt: c.createdAt || null,
     isNew: false,
   };

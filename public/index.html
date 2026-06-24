@@ -8,90 +8,111 @@
     *{box-sizing:border-box;margin:0;padding:0;}
     body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#eef0f4;color:#111;}
 
-    header{background:#1a1a2e;color:#fff;padding:20px 32px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;}
-    header h1{font-size:20px;font-weight:800;letter-spacing:.3px;}
+    header{background:#1a1a2e;color:#fff;padding:18px 32px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;}
+    header h1{font-size:20px;font-weight:800;}
     #gen-time{font-size:13px;opacity:.65;}
-    .btn-refresh{background:transparent;border:1px solid rgba(255,255,255,.3);color:#fff;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600;}
+    .hdr-btns{display:flex;gap:8px;align-items:center;}
+    .btn-hdr{padding:6px 14px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:700;border:none;}
+    .btn-check{background:#16a34a;color:#fff;}
+    .btn-check:hover{background:#15803d;}
+    .btn-check:disabled{background:#555;cursor:default;}
+    .btn-refresh{background:transparent;border:1px solid rgba(255,255,255,.35);color:#fff;}
     .btn-refresh:hover{border-color:#fff;}
-    .btn-check-new{background:#16a34a;border:none;color:#fff;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:700;}
-    .btn-check-new:hover{background:#15803d;}
-    .btn-check-new:disabled{background:#666;cursor:default;}
-    .new-toast{display:none;background:#dcfce7;border:2px solid #16a34a;color:#15803d;padding:10px 20px;border-radius:8px;margin:0 32px 12px;font-size:14px;font-weight:700;}
-    .b-new{background:#dcfce7;color:#15803d;border:1px solid #86efac;}
 
-    .stats{background:#fff;border-bottom:2px solid #dde1e8;padding:16px 32px;display:flex;gap:32px;flex-wrap:wrap;align-items:center;}
-    .stat-item .num{font-size:26px;font-weight:800;color:#1a1a2e;line-height:1;}
-    .stat-item .lbl{font-size:11px;font-weight:700;color:#666;text-transform:uppercase;letter-spacing:.6px;margin-top:3px;}
+    .stats{background:#fff;border-bottom:2px solid #dde1e8;padding:14px 32px;display:flex;gap:28px;flex-wrap:wrap;}
+    .stat-item .num{font-size:24px;font-weight:800;color:#1a1a2e;line-height:1;}
+    .stat-item .lbl{font-size:11px;font-weight:700;color:#666;text-transform:uppercase;letter-spacing:.6px;margin-top:2px;}
 
-    .filter-bar{background:#fff;border-bottom:1px solid #dde1e8;padding:14px 32px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;}
-    .filter-bar label{font-size:12px;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:.6px;margin-right:4px;}
-    .chip{display:inline-flex;align-items:center;gap:5px;padding:6px 14px;border-radius:20px;border:2px solid #dde1e8;background:#f5f6f8;color:#333;font-size:13px;font-weight:700;cursor:pointer;transition:all .15s;user-select:none;}
+    /* FILTERS — single-select OR logic */
+    .filter-bar{background:#fff;border-bottom:1px solid #dde1e8;padding:12px 32px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;}
+    .filter-bar label{font-size:11px;font-weight:800;color:#888;text-transform:uppercase;letter-spacing:.8px;margin-right:2px;}
+    .chip{padding:6px 14px;border-radius:20px;border:2px solid #dde1e8;background:#f5f6f8;color:#333;font-size:13px;font-weight:700;cursor:pointer;transition:all .15s;user-select:none;white-space:nowrap;}
     .chip:hover{border-color:#1a1a2e;color:#1a1a2e;}
     .chip.active{background:#1a1a2e;color:#fff;border-color:#1a1a2e;}
-    .chip.chip-remove.active{background:#dc2626;border-color:#dc2626;}
-    .filter-sep{width:1px;height:28px;background:#dde1e8;margin:0 4px;}
+    .chip.c-red.active{background:#dc2626;border-color:#dc2626;}
+    .chip.c-green.active{background:#16a34a;border-color:#16a34a;}
+    .filter-sep{width:1px;height:24px;background:#e5e7eb;margin:0 2px;}
 
-    .toolbar{padding:16px 32px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;}
-    .toolbar-left{display:flex;align-items:center;gap:12px;}
-    .result-count{font-size:14px;font-weight:700;color:#444;}
-    .sort-select{border:1px solid #ccc;border-radius:6px;padding:7px 10px;font-size:13px;font-weight:600;color:#333;background:#fff;cursor:pointer;}
-    .toolbar-right{display:flex;gap:10px;}
-    .btn{border:none;padding:10px 20px;border-radius:8px;cursor:pointer;font-size:14px;font-weight:700;transition:all .15s;}
+    /* TOOLBAR */
+    .toolbar{padding:14px 32px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;background:#f8f9fb;border-bottom:1px solid #e5e7eb;}
+    .toolbar-left{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+    .result-count{font-size:14px;font-weight:700;color:#333;}
+    .selected-count{font-size:13px;font-weight:700;color:#1d4ed8;background:#eff6ff;border:1px solid #bfdbfe;padding:4px 12px;border-radius:20px;display:none;}
+    .sort-sel{border:1px solid #ccc;border-radius:6px;padding:6px 10px;font-size:13px;font-weight:600;color:#333;background:#fff;cursor:pointer;}
+    .toolbar-right{display:flex;gap:8px;flex-wrap:wrap;}
+    .btn{padding:9px 18px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:700;border:none;transition:all .15s;}
     .btn-dark{background:#1a1a2e;color:#fff;}
     .btn-dark:hover{background:#2d2d4e;}
     .btn-dark.copied{background:#16a34a;}
     .btn-outline{background:#fff;color:#1a1a2e;border:2px solid #1a1a2e;}
     .btn-outline:hover{background:#f0f0f5;}
+    .btn-sel{background:#2563eb;color:#fff;display:none;}
+    .btn-sel:hover{background:#1d4ed8;}
 
-    .contact-list{padding:0 32px 40px;display:flex;flex-direction:column;gap:10px;}
+    /* TOAST */
+    .toast{display:none;padding:10px 20px;border-radius:8px;margin:8px 32px 0;font-size:14px;font-weight:700;}
+    .toast-green{background:#dcfce7;border:2px solid #16a34a;color:#15803d;}
+    .toast-gray{background:#f9fafb;border:2px solid #d1d5db;color:#555;}
 
-    .card{background:#fff;border:1px solid #dde1e8;border-left:5px solid #dde1e8;border-radius:10px;padding:16px 20px;display:grid;grid-template-columns:1fr auto;gap:12px;transition:box-shadow .15s;}
-    .card:hover{box-shadow:0 3px 16px rgba(0,0,0,.1);}
-    .card.priority-high{border-left-color:#1a1a2e;}
-    .card.priority-med{border-left-color:#2563eb;}
-    .card.priority-low{border-left-color:#d1d5db;}
-    .card.has-deal{border-left-color:#16a34a;}
-    .card.removed{opacity:.45;border-left-color:#dc2626;background:#fff5f5;}
+    /* LIST */
+    .contact-list{padding:12px 32px 40px;display:flex;flex-direction:column;gap:8px;}
 
-    .card-name{font-size:17px;font-weight:800;color:#111;margin-bottom:3px;}
+    .card{background:#fff;border:1px solid #dde1e8;border-left:5px solid #d1d5db;border-radius:10px;padding:14px 18px;display:grid;grid-template-columns:28px 1fr auto;gap:10px;align-items:start;transition:box-shadow .15s;}
+    .card:hover{box-shadow:0 2px 14px rgba(0,0,0,.09);}
+    .card.sel{border-color:#2563eb;border-left-color:#2563eb;background:#f8fbff;}
+    .card.c-deal{border-left-color:#16a34a;}
+    .card.c-high{border-left-color:#1a1a2e;}
+    .card.c-med{border-left-color:#3b82f6;}
+    .card.removed{opacity:.4;border-left-color:#dc2626;background:#fff5f5;}
+
+    /* Checkbox */
+    .card-cb{width:20px;height:20px;margin-top:2px;cursor:pointer;accent-color:#2563eb;flex-shrink:0;}
+
+    /* Card body */
+    .card-name{font-size:16px;font-weight:800;color:#111;margin-bottom:2px;}
     .card-sub{font-size:14px;font-weight:600;color:#333;margin-bottom:6px;}
-    .card-sub .co{color:#1a1a2e;}
-    .f1k{display:inline-block;background:#fef3c7;color:#92400e;border:1px solid #fbbf24;border-radius:4px;font-size:11px;font-weight:800;padding:1px 6px;margin-left:6px;vertical-align:middle;}
-    .card-badges{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;}
-    .badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:700;}
+    .co{color:#1a1a2e;font-weight:700;}
+    .f1k{display:inline-block;background:#fef3c7;color:#92400e;border:1px solid #fbbf24;border-radius:4px;font-size:11px;font-weight:800;padding:1px 6px;margin-left:5px;vertical-align:middle;}
+    .rq{display:inline-block;background:#ede9fe;color:#5b21b6;border:1px solid #c4b5fd;border-radius:4px;font-size:11px;font-weight:800;padding:1px 6px;margin-left:5px;vertical-align:middle;}
+    .card-badges{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:7px;}
+    .badge{display:inline-flex;align-items:center;gap:3px;padding:3px 9px;border-radius:10px;font-size:12px;font-weight:700;}
     .b-deal{background:#dcfce7;color:#15803d;border:1px solid #86efac;}
     .b-ric{background:#dbeafe;color:#1d4ed8;border:1px solid #93c5fd;}
     .b-dinner{background:#fae8ff;color:#7e22ce;border:1px solid #d8b4fe;}
     .b-scott{background:#ffedd5;color:#c2410c;border:1px solid #fdba74;}
     .b-active{background:#f0fdf4;color:#15803d;border:1px solid #86efac;}
     .b-inactive{background:#fefce8;color:#854d0e;border:1px solid #fcd34d;}
-    .b-nocontact{background:#f9fafb;color:#6b7280;border:1px solid #e5e7eb;}
+    .b-none{background:#f9fafb;color:#6b7280;border:1px solid #e5e7eb;}
+    .b-new{background:#dcfce7;color:#15803d;border:1px solid #86efac;}
+    .b-texted{background:#ede9fe;color:#5b21b6;border:1px solid #c4b5fd;}
     .b-removed{background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;}
-    .card-export{font-family:'Courier New',monospace;font-size:12px;color:#444;margin-top:4px;word-break:break-all;line-height:1.5;}
+    .card-export{font-family:'Courier New',monospace;font-size:12px;color:#444;margin-top:3px;word-break:break-all;}
 
-    .card-right{display:flex;flex-direction:column;align-items:flex-end;gap:8px;min-width:160px;}
-    .priority-badge{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;padding:3px 10px;border-radius:12px;}
+    .card-actions{display:flex;gap:6px;margin-top:7px;flex-wrap:wrap;}
+    .btn-sm{padding:4px 11px;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;border:2px solid;}
+    .btn-remove-sm{color:#dc2626;border-color:#fca5a5;background:#fff;}
+    .btn-remove-sm:hover{background:#fee2e2;}
+    .btn-restore-sm{color:#15803d;border-color:#86efac;background:#fff;}
+    .btn-restore-sm:hover{background:#dcfce7;}
+
+    /* Card right */
+    .card-right{display:flex;flex-direction:column;align-items:flex-end;gap:7px;min-width:150px;}
+    .pri-badge{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;padding:3px 9px;border-radius:10px;}
     .p-top{background:#1a1a2e;color:#fff;}
     .p-high{background:#dbeafe;color:#1e40af;}
     .p-med{background:#f3f4f6;color:#374151;}
-    .phone-pill{border-radius:20px;padding:6px 14px;font-size:14px;font-weight:800;text-align:right;}
+    .phone-pill{border-radius:18px;padding:6px 13px;font-size:14px;font-weight:800;text-align:right;}
     .ph-mobile{background:#eff6ff;color:#1d4ed8;border:2px solid #93c5fd;}
-    .ph-none{background:#fef9c3;color:#854d0e;border:2px solid #fcd34d;font-size:12px;}
-    .phone-type{font-size:11px;font-weight:700;color:#666;text-transform:uppercase;text-align:right;}
+    .ph-none{background:#fef9c3;color:#854d0e;border:2px solid #fcd34d;font-size:12px;padding:4px 10px;}
+    .phone-type{font-size:11px;font-weight:700;color:#888;text-transform:uppercase;}
 
-    /* Remove button */
-    .btn-remove{display:inline-flex;align-items:center;gap:5px;border:2px solid #fca5a5;background:#fff;color:#dc2626;border-radius:8px;padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer;transition:all .15s;margin-top:4px;}
-    .btn-remove:hover{background:#fee2e2;}
-    .btn-remove.flagged{background:#dc2626;color:#fff;border-color:#dc2626;}
-    .btn-restore{display:inline-flex;align-items:center;gap:5px;border:2px solid #86efac;background:#fff;color:#15803d;border-radius:8px;padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer;transition:all .15s;margin-top:4px;}
-    .btn-restore:hover{background:#dcfce7;}
+    /* Export panel */
+    #export-panel{display:none;background:#fff;border:2px solid #1a1a2e;border-radius:12px;margin:0 32px 32px;padding:22px;}
+    #export-panel h3{font-size:15px;font-weight:800;margin-bottom:3px;}
+    #export-panel p{font-size:13px;color:#555;margin-bottom:14px;}
+    #export-text{font-family:'Courier New',monospace;font-size:13px;line-height:2;color:#111;white-space:pre-wrap;background:#f8f9fa;border-radius:8px;padding:14px;max-height:380px;overflow-y:auto;}
 
-    #export-panel{display:none;background:#fff;border:2px solid #1a1a2e;border-radius:12px;margin:0 32px 40px;padding:24px;}
-    #export-panel h3{font-size:15px;font-weight:800;margin-bottom:4px;color:#111;}
-    #export-panel p{font-size:13px;color:#555;margin-bottom:16px;}
-    #export-text{font-family:'Courier New',monospace;font-size:13px;line-height:2.1;color:#111;white-space:pre-wrap;background:#f8f9fa;border-radius:8px;padding:16px;max-height:400px;overflow-y:auto;}
-
-    .loading{text-align:center;padding:60px;font-size:16px;font-weight:600;color:#666;}
+    .loading{text-align:center;padding:60px;font-size:16px;font-weight:600;color:#777;}
     .error-msg{text-align:center;padding:40px;font-size:15px;font-weight:700;color:#dc2626;}
   </style>
 </head>
@@ -99,10 +120,12 @@
 
 <header>
   <h1>FG CIO/CTO Texting Campaign</h1>
-  <div style="display:flex;align-items:center;gap:16px;">
+  <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
     <span id="gen-time">Loading from HubSpot…</span>
-    <button class="btn-check-new" id="btn-check-new" onclick="checkNew()">✦ Check New</button>
-    <button class="btn-refresh" onclick="refreshData()">↻ Full Refresh</button>
+    <div class="hdr-btns">
+      <button class="btn-hdr btn-check" id="btn-check" onclick="checkNew()">✦ Check New</button>
+      <button class="btn-hdr btn-refresh" onclick="refreshData()">↻ Full Refresh</button>
+    </div>
   </div>
 </header>
 
@@ -117,226 +140,305 @@
 </div>
 
 <div class="filter-bar">
-  <label>Filter:</label>
-  <div class="chip active" data-filter="all" onclick="toggleFilter(this)">All</div>
-  <div class="chip" data-filter="deal" onclick="toggleFilter(this)">🤝 Has Open Deal</div>
-  <div class="chip" data-filter="active" onclick="toggleFilter(this)">⚡ Active ≤30d</div>
-  <div class="chip" data-filter="ric" onclick="toggleFilter(this)">🎯 RIC Attendee</div>
-  <div class="chip" data-filter="dinner" onclick="toggleFilter(this)">🍽 CEO Dinner</div>
-  <div class="chip" data-filter="scott" onclick="toggleFilter(this)">👤 Scott Cook</div>
+  <label>Show:</label>
+  <div class="chip active" data-f="all" onclick="setFilter(this)">All</div>
+  <div class="chip" data-f="deal" onclick="setFilter(this)">🤝 Open Deal</div>
+  <div class="chip" data-f="active" onclick="setFilter(this)">⚡ Active ≤30d</div>
+  <div class="chip" data-f="ric" onclick="setFilter(this)">🎯 RIC Attendee</div>
+  <div class="chip" data-f="dinner" onclick="setFilter(this)">🍽 CEO Dinner</div>
+  <div class="chip" data-f="scott" onclick="setFilter(this)">👤 Scott Cook</div>
   <div class="filter-sep"></div>
-  <div class="chip" data-filter="f500" onclick="toggleFilter(this)">🏆 Fortune 500</div>
-  <div class="chip" data-filter="mobile" onclick="toggleFilter(this)">📱 Mobile Only</div>
+  <div class="chip" data-f="f500" onclick="setFilter(this)">🏆 Fortune 500</div>
+  <div class="chip" data-f="mobile" onclick="setFilter(this)">📱 Mobile Only</div>
   <div class="filter-sep"></div>
-  <div class="chip chip-remove" data-filter="removed" onclick="toggleFilter(this)">🚫 Removed</div>
+  <div class="chip c-green" data-f="texted" onclick="setFilter(this)">✓ Texted This Week</div>
+  <div class="chip c-red" data-f="removed" onclick="setFilter(this)">🚫 Removed</div>
 </div>
+
+<div class="toast toast-green" id="toast"></div>
 
 <div class="toolbar">
   <div class="toolbar-left">
     <span class="result-count" id="result-count">Loading…</span>
-    <select class="sort-select" id="sort-select" onchange="applyFilters()">
-      <option value="priority">Sort: Priority Score</option>
-      <option value="active">Sort: Most Recent Activity</option>
-      <option value="company">Sort: Company Name</option>
+    <span class="selected-count" id="sel-count"></span>
+    <select class="sort-sel" id="sort-sel" onchange="render()">
+      <option value="priority">Sort: Priority</option>
+      <option value="active">Sort: Recent Activity</option>
+      <option value="company">Sort: Company</option>
       <option value="fortune">Sort: Fortune Rank</option>
     </select>
   </div>
   <div class="toolbar-right">
-    <button class="btn btn-outline" onclick="toggleExport()">📋 Keith Export</button>
-    <button class="btn btn-dark" id="copy-btn" onclick="copyForKeith()">Copy for Keith</button>
+    <button class="btn btn-sel" id="btn-export-sel" onclick="exportSelected()">📋 Export Selected (<span id="sel-n">0</span>)</button>
+    <button class="btn btn-outline" onclick="toggleExportPanel()">📋 Keith Export</button>
+    <button class="btn btn-dark" id="btn-copy" onclick="copyForKeith()">Copy for Keith</button>
   </div>
 </div>
 
-<div class="new-toast" id="new-toast"></div>
 <div class="contact-list" id="contact-list">
   <div class="loading">Pulling live data from HubSpot — first load takes ~30 seconds…</div>
 </div>
 
 <div id="export-panel">
   <h3>Keith-Ready Text List</h3>
-  <p>Mobile numbers only. Flagged contacts excluded. Copy and paste directly into iMessage.</p>
+  <p>Mobile numbers only · Removed contacts excluded · Copy → paste directly into iMessage</p>
   <pre id="export-text"></pre>
 </div>
 
 <script>
 let allContacts = [];
-let activeFilters = new Set(['all']);
-// Persist removed IDs in localStorage
-let removedIds = new Set(JSON.parse(localStorage.getItem('fg-removed') || '[]'));
+let activeFilter = 'all';
+let selectedIds = new Set();
+let removedIds  = new Set(JSON.parse(localStorage.getItem('fg-removed')  || '[]'));
+let textedLog   = JSON.parse(localStorage.getItem('fg-texted-log') || '[]');
+// textedLog: [{ids: [...], date: ISO, label: "June 23"}]
 
-function saveRemoved() {
-  localStorage.setItem('fg-removed', JSON.stringify([...removedIds]));
+function textedThisWeek() {
+  const weekAgo = Date.now() - 7*24*60*60*1000;
+  const ids = new Set();
+  textedLog.filter(e => new Date(e.date).getTime() > weekAgo).forEach(e => e.ids.forEach(id => ids.add(id)));
+  return ids;
 }
+
+function saveRemoved() { localStorage.setItem('fg-removed', JSON.stringify([...removedIds])); }
+function saveTexted()  { localStorage.setItem('fg-texted-log', JSON.stringify(textedLog)); }
 
 function toggleRemove(id) {
-  if (removedIds.has(id)) {
-    removedIds.delete(id);
-  } else {
-    removedIds.add(id);
-  }
+  removedIds.has(id) ? removedIds.delete(id) : removedIds.add(id);
+  selectedIds.delete(id);
   saveRemoved();
-  applyFilters();
+  render();
 }
+
+function toggleSelect(id) {
+  selectedIds.has(id) ? selectedIds.delete(id) : selectedIds.add(id);
+  updateSelCount();
+  // re-render just that card's border without full re-render
+  const card = document.querySelector(`.card[data-id="${id}"]`);
+  if (card) {
+    const cb = card.querySelector('.card-cb');
+    if (selectedIds.has(id)) { card.classList.add('sel'); if(cb) cb.checked=true; }
+    else { card.classList.remove('sel'); if(cb) cb.checked=false; }
+  }
+}
+
+function updateSelCount() {
+  const n = selectedIds.size;
+  const sc = document.getElementById('sel-count');
+  const btnSel = document.getElementById('btn-export-sel');
+  const selN = document.getElementById('sel-n');
+  sc.style.display = n ? 'inline' : 'none';
+  sc.textContent = `${n} selected`;
+  btnSel.style.display = n ? 'inline-flex' : 'none';
+  if (selN) selN.textContent = n;
+}
+
+// ── Rendering ────────────────────────────────────────────────────────────────
 
 function ph(c) {
   if (c.mobile) return { num: c.mobile, cls: 'ph-mobile', type: 'Mobile' };
   return { num: 'No mobile', cls: 'ph-none', type: '' };
 }
 
-function priorityLabel(score) {
-  if (score >= 50) return { lbl: '🔥 Top Priority', cls: 'p-top' };
-  if (score >= 25) return { lbl: '⬆ High',          cls: 'p-high' };
-  return              { lbl: 'Standard',             cls: 'p-med' };
+function priLabel(score) {
+  if (score >= 50) return { t: '🔥 Top Priority', cls: 'p-top' };
+  if (score >= 25) return { t: '⬆ High',          cls: 'p-high' };
+  return              { t: 'Standard',             cls: 'p-med' };
 }
 
-function cardBorderClass(c) {
-  if (c.hasOpenDeal) return 'has-deal';
-  if (c.priority >= 50) return 'priority-high';
-  if (c.priority >= 25) return 'priority-med';
-  return 'priority-low';
-}
-
-function activityBadge(c) {
-  if (c.lastContactedDays === null) return `<span class="badge b-nocontact">No contact on record</span>`;
-  if (c.active) return `<span class="badge b-active">⚡ Active — ${c.lastContactedDays}d ago · Text Keith</span>`;
-  return `<span class="badge b-inactive">↻ Inactive — ${c.lastContactedDays}d · Re-engage</span>`;
+function cardClass(c) {
+  if (removedIds.has(c.id)) return 'removed';
+  if (c.hasOpenDeal) return 'c-deal';
+  if (c.priority >= 50) return 'c-high';
+  if (c.priority >= 25) return 'c-med';
+  return '';
 }
 
 function renderCard(c) {
-  const isRemoved = removedIds.has(c.id);
+  const isRemoved  = removedIds.has(c.id);
+  const isSelected = selectedIds.has(c.id);
+  const textedIds  = textedThisWeek();
+  const wasTexted  = textedIds.has(c.id);
   const p = ph(c);
-  const pl = priorityLabel(c.priority);
+  const pl = priLabel(c.priority);
   const f1k = c.fortuneRank ? `<span class="f1k">#${c.fortuneRank}</span>` : '';
+  const rq  = c.rqScore     ? `<span class="rq">RQ ${c.rqScore}</span>` : '';
 
   const badges = [];
-  if (isRemoved)             badges.push(`<span class="badge b-removed">🚫 Removed from campaign</span>`);
-  if (c.isNew)               badges.push(`<span class="badge b-new">✦ New Contact</span>`);
-  if (c.hasOpenDeal)         badges.push(`<span class="badge b-deal">🤝 Open Deal</span>`);
-  if (c.events.ric)          badges.push(`<span class="badge b-ric">🎯 RIC Attendee</span>`);
-  if (c.events.ceo_dinner)   badges.push(`<span class="badge b-dinner">🍽 CEO Dinner</span>`);
-  if (c.events.scott_cook)   badges.push(`<span class="badge b-scott">👤 Scott Cook</span>`);
-  badges.push(activityBadge(c));
+  if (isRemoved)           badges.push(`<span class="badge b-removed">🚫 Removed</span>`);
+  if (c.isNew)             badges.push(`<span class="badge b-new">✦ New</span>`);
+  if (wasTexted)           badges.push(`<span class="badge b-texted">✓ Texted this week</span>`);
+  if (c.hasOpenDeal)       badges.push(`<span class="badge b-deal">🤝 Open Deal</span>`);
+  if (c.events.ric)        badges.push(`<span class="badge b-ric">🎯 RIC</span>`);
+  if (c.events.ceo_dinner) badges.push(`<span class="badge b-dinner">🍽 CEO Dinner</span>`);
+  if (c.events.scott_cook) badges.push(`<span class="badge b-scott">👤 Scott Cook</span>`);
+
+  const days = c.lastContactedDays;
+  if (days === null)     badges.push(`<span class="badge b-none">No contact on record</span>`);
+  else if (c.active)     badges.push(`<span class="badge b-active">⚡ Active ${days}d ago · Text Keith</span>`);
+  else                   badges.push(`<span class="badge b-inactive">↻ Inactive ${days}d · Re-engage</span>`);
 
   const exportLine = `${c.name} | ${c.company}${c.fortuneRank ? ` (#${c.fortuneRank})` : ''} | ${c.title} | ${c.mobile || 'NO MOBILE'}`;
 
   const removeBtn = isRemoved
-    ? `<button class="btn-restore" onclick="toggleRemove('${c.id}')">↩ Restore to campaign</button>`
-    : `<button class="btn-remove" onclick="toggleRemove('${c.id}')">🚫 Remove from campaign</button>`;
+    ? `<button class="btn-sm btn-restore-sm" onclick="toggleRemove('${c.id}')">↩ Restore</button>`
+    : `<button class="btn-sm btn-remove-sm"  onclick="toggleRemove('${c.id}')">🚫 Remove</button>`;
 
   return `
-    <div class="card ${isRemoved ? 'removed' : cardBorderClass(c)}" data-id="${c.id}">
+    <div class="card ${cardClass(c)}${isSelected?' sel':''}" data-id="${c.id}">
+      <input type="checkbox" class="card-cb" ${isSelected?'checked':''} onchange="toggleSelect('${c.id}')">
       <div>
         <div class="card-name">${c.name}</div>
-        <div class="card-sub"><span class="co">${c.company || '—'}</span>${f1k}${c.title ? ' · ' + c.title : ''}</div>
+        <div class="card-sub"><span class="co">${c.company||'—'}</span>${f1k}${rq}${c.title?' · '+c.title:''}</div>
         <div class="card-badges">${badges.join('')}</div>
         <div class="card-export">${exportLine}</div>
-        ${removeBtn}
+        <div class="card-actions">${removeBtn}</div>
       </div>
       <div class="card-right">
-        <span class="priority-badge ${pl.cls}">${pl.lbl}</span>
+        <span class="pri-badge ${pl.cls}">${pl.t}</span>
         <span class="phone-pill ${p.cls}">${p.num}</span>
         <span class="phone-type">${p.type}</span>
       </div>
     </div>`;
 }
 
-function filterContacts(contacts) {
-  if (activeFilters.has('all')) return contacts.filter(c => !removedIds.has(c.id));
-  if (activeFilters.has('removed')) return contacts.filter(c => removedIds.has(c.id));
-  return contacts.filter(c => {
-    if (removedIds.has(c.id)) return false;
-    if (activeFilters.has('deal')   && !c.hasOpenDeal) return false;
-    if (activeFilters.has('active') && !c.active) return false;
-    if (activeFilters.has('ric')    && !c.events.ric) return false;
-    if (activeFilters.has('dinner') && !c.events.ceo_dinner) return false;
-    if (activeFilters.has('scott')  && !c.events.scott_cook) return false;
-    if (activeFilters.has('f500')   && !c.fortuneRank) return false;
-    if (activeFilters.has('mobile') && !c.mobile) return false;
-    return true;
-  });
+// ── Filter + sort ─────────────────────────────────────────────────────────────
+
+function applyFilter(contacts) {
+  const textedIds = textedThisWeek();
+  switch (activeFilter) {
+    case 'all':     return contacts.filter(c => !removedIds.has(c.id));
+    case 'removed': return contacts.filter(c =>  removedIds.has(c.id));
+    case 'texted':  return contacts.filter(c =>  textedIds.has(c.id) && !removedIds.has(c.id));
+    case 'deal':    return contacts.filter(c =>  c.hasOpenDeal && !removedIds.has(c.id));
+    case 'active':  return contacts.filter(c =>  c.active && !removedIds.has(c.id));
+    case 'ric':     return contacts.filter(c =>  c.events.ric && !removedIds.has(c.id));
+    case 'dinner':  return contacts.filter(c =>  c.events.ceo_dinner && !removedIds.has(c.id));
+    case 'scott':   return contacts.filter(c =>  c.events.scott_cook && !removedIds.has(c.id));
+    case 'f500':    return contacts.filter(c =>  c.fortuneRank && !removedIds.has(c.id));
+    case 'mobile':  return contacts.filter(c =>  c.mobile && !removedIds.has(c.id));
+    default:        return contacts.filter(c => !removedIds.has(c.id));
+  }
 }
 
-function sortContacts(contacts) {
-  const sort = document.getElementById('sort-select').value;
-  return [...contacts].sort((a, b) => {
-    if (sort === 'priority') return b.priority - a.priority;
-    if (sort === 'active') return (a.lastContactedDays ?? 99999) - (b.lastContactedDays ?? 99999);
-    if (sort === 'company') return (a.company || '').localeCompare(b.company || '');
-    if (sort === 'fortune') return (a.fortuneRank ?? 9999) - (b.fortuneRank ?? 9999);
+function applySort(contacts) {
+  const s = document.getElementById('sort-sel').value;
+  return [...contacts].sort((a,b) => {
+    if (s==='priority') return b.priority - a.priority;
+    if (s==='active')   return (a.lastContactedDays??99999)-(b.lastContactedDays??99999);
+    if (s==='company')  return (a.company||'').localeCompare(b.company||'');
+    if (s==='fortune')  return (a.fortuneRank??9999)-(b.fortuneRank??9999);
     return 0;
   });
 }
 
-function applyFilters() {
-  const filtered = sortContacts(filterContacts(allContacts));
-  document.getElementById('result-count').textContent = `Showing ${filtered.length} of ${allContacts.length} contacts`;
-  document.getElementById('contact-list').innerHTML = filtered.map(renderCard).join('');
-  updateExport(filtered);
+function setFilter(el) {
+  document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  activeFilter = el.dataset.f;
+  render();
 }
 
-function toggleFilter(el) {
-  const f = el.dataset.filter;
-  if (f === 'all') {
-    activeFilters = new Set(['all']);
-    document.querySelectorAll('.chip').forEach(c => c.classList.toggle('active', c.dataset.filter === 'all'));
-  } else {
-    activeFilters.delete('all');
-    document.querySelector('[data-filter="all"]').classList.remove('active');
-    el.classList.toggle('active');
-    if (el.classList.contains('active')) activeFilters.add(f); else activeFilters.delete(f);
-    if (activeFilters.size === 0) {
-      activeFilters.add('all');
-      document.querySelector('[data-filter="all"]').classList.add('active');
-    }
-  }
-  applyFilters();
+function render() {
+  const filtered = applySort(applyFilter(allContacts));
+  document.getElementById('result-count').textContent = `Showing ${filtered.length} of ${allContacts.length} contacts`;
+  document.getElementById('contact-list').innerHTML = filtered.length
+    ? filtered.map(renderCard).join('')
+    : '<div class="loading">No contacts match this filter.</div>';
+  updateExportPanel(filtered);
+  updateSelCount();
 }
+
+// ── Stats ──────────────────────────────────────────────────────────────────────
 
 function updateStats(contacts) {
-  document.getElementById('s-total').textContent = contacts.length;
-  document.getElementById('s-mobile').textContent = contacts.filter(c => c.mobile).length;
-  document.getElementById('s-active').textContent = contacts.filter(c => c.active).length;
-  document.getElementById('s-deal').textContent = contacts.filter(c => c.hasOpenDeal).length;
-  document.getElementById('s-f500').textContent = contacts.filter(c => c.fortuneRank && c.fortuneRank <= 500).length;
-  document.getElementById('s-ric').textContent = contacts.filter(c => c.events.ric).length;
+  const textedIds = textedThisWeek();
+  document.getElementById('s-total').textContent   = contacts.length;
+  document.getElementById('s-mobile').textContent  = contacts.filter(c=>c.mobile).length;
+  document.getElementById('s-active').textContent  = contacts.filter(c=>c.active).length;
+  document.getElementById('s-deal').textContent    = contacts.filter(c=>c.hasOpenDeal).length;
+  document.getElementById('s-f500').textContent    = contacts.filter(c=>c.fortuneRank&&c.fortuneRank<=500).length;
+  document.getElementById('s-ric').textContent     = contacts.filter(c=>c.events.ric).length;
   document.getElementById('s-removed').textContent = removedIds.size;
 }
 
-function buildExportText(contacts) {
-  const date = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
-  const lines = contacts
-    .filter(c => c.mobile && !removedIds.has(c.id))
-    .map(c => `${c.name} | ${c.company}${c.fortuneRank ? ` (#${c.fortuneRank})` : ''} | ${c.title} | ${c.mobile}`);
-  return `Keith — ${date} Texting List (${lines.length} contacts)\n${'─'.repeat(60)}\n\n` + lines.join('\n');
+// ── Export ────────────────────────────────────────────────────────────────────
+
+function buildText(contacts) {
+  const date = new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
+  const lines = contacts.filter(c=>c.mobile&&!removedIds.has(c.id))
+    .map(c=>`${c.name} | ${c.company}${c.fortuneRank?` (#${c.fortuneRank})`:''} | ${c.title} | ${c.mobile}`);
+  return `Keith — ${date} Texting List (${lines.length} contacts)\n${'─'.repeat(60)}\n\n`+lines.join('\n');
 }
 
-function updateExport(filtered) {
-  document.getElementById('export-text').textContent = buildExportText(filtered);
+function updateExportPanel(filtered) {
+  document.getElementById('export-text').textContent = buildText(filtered);
+}
+
+function markAsTexted(ids) {
+  const date = new Date().toISOString();
+  const label = new Date().toLocaleDateString('en-US',{month:'long',day:'numeric'});
+  textedLog.push({ ids:[...ids], date, label });
+  // keep only last 8 weeks of history
+  const cutoff = Date.now() - 56*24*60*60*1000;
+  textedLog = textedLog.filter(e => new Date(e.date).getTime() > cutoff);
+  saveTexted();
 }
 
 function copyForKeith() {
-  const filtered = sortContacts(filterContacts(allContacts));
-  const text = buildExportText(filtered);
-  navigator.clipboard.writeText(text).then(() => {
-    const btn = document.getElementById('copy-btn');
-    btn.textContent = '✓ Copied!';
+  const filtered = applySort(applyFilter(allContacts));
+  const textable = filtered.filter(c=>c.mobile&&!removedIds.has(c.id));
+  const text = buildText(filtered);
+  navigator.clipboard.writeText(text).then(()=>{
+    markAsTexted(textable.map(c=>c.id));
+    updateStats(allContacts);
+    render();
+    const btn = document.getElementById('btn-copy');
+    btn.textContent = '✓ Copied & Logged!';
     btn.classList.add('copied');
-    setTimeout(() => { btn.textContent = 'Copy for Keith'; btn.classList.remove('copied'); }, 2500);
+    setTimeout(()=>{ btn.textContent='Copy for Keith'; btn.classList.remove('copied'); }, 3000);
+    showToast(`✓ Copied ${textable.length} contacts — marked as Texted This Week`, 'green');
   });
 }
 
-function toggleExport() {
-  const panel = document.getElementById('export-panel');
-  const btn = document.querySelector('.btn-outline');
-  const visible = panel.style.display === 'block';
-  panel.style.display = visible ? 'none' : 'block';
-  btn.textContent = visible ? '📋 Keith Export' : '▲ Hide Export';
-  if (!visible) panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+function exportSelected() {
+  if (!selectedIds.size) return;
+  const contacts = allContacts.filter(c=>selectedIds.has(c.id)&&c.mobile);
+  if (!contacts.length) { alert('No selected contacts have mobile numbers.'); return; }
+  const text = buildText(contacts);
+  navigator.clipboard.writeText(text).then(()=>{
+    markAsTexted(contacts.map(c=>c.id));
+    selectedIds.clear();
+    updateStats(allContacts);
+    render();
+    showToast(`✓ Copied ${contacts.length} selected contacts — marked as Texted This Week`, 'green');
+  });
 }
 
+function toggleExportPanel() {
+  const panel = document.getElementById('export-panel');
+  const btn = document.querySelector('.btn-outline');
+  const vis = panel.style.display==='block';
+  panel.style.display = vis?'none':'block';
+  btn.textContent = vis?'📋 Keith Export':'▲ Hide Export';
+  if (!vis) panel.scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+// ── Toast ──────────────────────────────────────────────────────────────────────
+
+function showToast(msg, type='green') {
+  const t = document.getElementById('toast');
+  t.className = `toast toast-${type}`;
+  t.textContent = msg;
+  t.style.display = 'block';
+  setTimeout(()=>t.style.display='none', 6000);
+}
+
+// ── Data loading ───────────────────────────────────────────────────────────────
+
 async function loadData() {
+  document.getElementById('contact-list').innerHTML = '<div class="loading">Pulling live data from HubSpot — first load ~30 seconds…</div>';
   try {
-    document.getElementById('contact-list').innerHTML = '<div class="loading">Pulling live data from HubSpot — first load takes ~30 seconds…</div>';
     const res = await fetch('/api/contacts');
     if (!res.ok) throw new Error(`Server error ${res.status}`);
     const data = await res.json();
@@ -344,44 +446,33 @@ async function loadData() {
     allContacts = data.contacts;
     document.getElementById('gen-time').textContent = `Live · ${new Date(data.generatedAt).toLocaleString()}`;
     updateStats(allContacts);
-    applyFilters();
-  } catch (err) {
+    render();
+  } catch(err) {
     document.getElementById('contact-list').innerHTML = `<div class="error-msg">Error: ${err.message}</div>`;
     document.getElementById('gen-time').textContent = 'Failed to load';
   }
 }
 
 async function checkNew() {
-  const btn = document.getElementById('btn-check-new');
-  btn.disabled = true;
-  btn.textContent = 'Checking…';
+  const btn = document.getElementById('btn-check');
+  btn.disabled=true; btn.textContent='Checking…';
   try {
     const res = await fetch('/api/check-new');
     const data = await res.json();
     if (data.error) throw new Error(data.error);
-    const n = data.newContacts?.length || 0;
-    if (n > 0) {
+    const n = data.newContacts?.length||0;
+    if (n>0) {
       allContacts = [...data.newContacts, ...allContacts];
       updateStats(allContacts);
-      applyFilters();
-      const toast = document.getElementById('new-toast');
-      toast.style.display = 'block';
-      toast.textContent = `✦ ${n} new CIO/C-suite contact${n > 1 ? 's' : ''} added to HubSpot since last check`;
-      setTimeout(() => { toast.style.display = 'none'; }, 8000);
+      render();
+      showToast(`✦ ${n} new CIO/C-suite contact${n>1?'s':''} added since last check`, 'green');
     } else {
-      const toast = document.getElementById('new-toast');
-      toast.style.display = 'block';
-      toast.style.background = '#f9fafb';
-      toast.style.borderColor = '#d1d5db';
-      toast.style.color = '#555';
-      toast.textContent = `No new C-suite contacts since last check (${new Date(data.checkedAt).toLocaleTimeString()})`;
-      setTimeout(() => { toast.style.display = 'none'; toast.style.background=''; toast.style.borderColor=''; toast.style.color=''; }, 5000);
+      showToast(`No new contacts since last check (${new Date(data.checkedAt).toLocaleTimeString()})`, 'gray');
     }
-  } catch (err) {
-    alert('Check failed: ' + err.message);
+  } catch(err) {
+    showToast('Check failed: '+err.message, 'gray');
   } finally {
-    btn.disabled = false;
-    btn.textContent = '✦ Check New';
+    btn.disabled=false; btn.textContent='✦ Check New';
   }
 }
 
