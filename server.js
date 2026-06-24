@@ -19,6 +19,7 @@ const CONTACT_PROPS = [
   'mobilephone', 'phone', 'hs_lead_status', 'hubspot_owner_id',
   'notes_last_contacted', 'hs_email_last_send_date', 'num_associated_deals',
   'hubspotscore', 'rqkf__c', 'lead_stages', 'how_keith_s_met_him',
+  'city', 'state', 'zip',
 ];
 
 // Deal stages in main pipeline (17259398)
@@ -214,6 +215,8 @@ function shapeContact(c, openDealIds, eventMap) {
     hubspotScore: parseInt(p.hubspotscore || '0'),
     rqScore: p.rqkf__c || '',
     howMet: p.how_keith_s_met_him || '',
+    city: p.city || '',
+    state: p.state || '',
     createdAt: c.createdAt || null,
     isNew: false,
   };

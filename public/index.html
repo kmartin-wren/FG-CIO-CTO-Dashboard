@@ -32,6 +32,8 @@
     .chip.c-red.active{background:#dc2626;border-color:#dc2626;}
     .chip.c-green.active{background:#16a34a;border-color:#16a34a;}
     .filter-sep{width:1px;height:24px;background:#e5e7eb;margin:0 2px;}
+    .metro-sel{border:2px solid #dde1e8;border-radius:20px;padding:6px 14px;font-size:13px;font-weight:700;color:#333;background:#f5f6f8;cursor:pointer;appearance:none;-webkit-appearance:none;padding-right:28px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23666' stroke-width='2' fill='none'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;}
+    .metro-sel.active{border-color:#1a1a2e;background-color:#1a1a2e;color:#fff;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23fff' stroke-width='2' fill='none'/%3E%3C/svg%3E");}
 
     /* TOOLBAR */
     .toolbar{padding:14px 32px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;background:#f8f9fb;border-bottom:1px solid #e5e7eb;}
@@ -153,6 +155,23 @@
   <div class="filter-sep"></div>
   <div class="chip c-green" data-f="texted" onclick="setFilter(this)">✓ Texted This Week</div>
   <div class="chip c-red" data-f="removed" onclick="setFilter(this)">🚫 Removed</div>
+  <div class="filter-sep"></div>
+  <select class="metro-sel" id="metro-sel" onchange="onMetroChange(this)">
+    <option value="">📍 All Cities</option>
+    <option value="nyc">🗽 New York Metro</option>
+    <option value="sf">🌉 Bay Area</option>
+    <option value="la">🌴 Los Angeles</option>
+    <option value="boston">🦞 Boston</option>
+    <option value="dc">🏛 Washington DC</option>
+    <option value="chicago">🌬 Chicago</option>
+    <option value="seattle">☕ Seattle</option>
+    <option value="dallas">🤠 Dallas / Fort Worth</option>
+    <option value="austin">🎸 Austin</option>
+    <option value="atlanta">🍑 Atlanta</option>
+    <option value="miami">🌊 Miami</option>
+    <option value="denver">⛰ Denver</option>
+    <option value="other">🌍 Other / Unknown</option>
+  </select>
 </div>
 
 <div class="toast toast-green" id="toast"></div>
@@ -186,8 +205,119 @@
 </div>
 
 <script>
+// ── Metro area definitions ────────────────────────────────────────────────────
+const METROS = {
+  nyc: {
+    label: 'New York Metro',
+    cities: ['new york','new york city','nyc','manhattan','brooklyn','queens','bronx','staten island',
+      'hoboken','jersey city','newark','weehawken','secaucus','fort lee','edgewater','union city',
+      'bayonne','elizabeth','stamford','greenwich','norwalk','westport','darien','new canaan',
+      'white plains','yonkers','mount vernon','new rochelle','scarsdale','harrison','port chester',
+      'westchester','long island','garden city','great neck','huntington','glen cove'],
+    states: [], // covered by city match
+  },
+  sf: {
+    label: 'Bay Area',
+    cities: ['san francisco','sf','oakland','berkeley','marin','sausalito','san rafael','mill valley',
+      'tiburon','corte madera','novato','palo alto','mountain view','sunnyvale','santa clara',
+      'cupertino','san jose','campbell','los gatos','los altos','menlo park','atherton',
+      'redwood city','san mateo','burlingame','millbrae','south san francisco','daly city',
+      'walnut creek','concord','pleasant hill','fremont','hayward','union city','san leandro',
+      'san ramon','dublin','pleasanton','livermore','danville','lafayette','orinda',
+      'emeryville','alameda','richmond','el cerrito','san carlos','foster city'],
+    states: [],
+  },
+  la: {
+    label: 'Los Angeles',
+    cities: ['los angeles','la','beverly hills','santa monica','culver city','burbank','pasadena',
+      'glendale','long beach','torrance','el segundo','manhattan beach','hermosa beach',
+      'redondo beach','inglewood','compton','carson','hawthorne','gardena','calabasas',
+      'encino','sherman oaks','studio city','north hollywood','van nuys','woodland hills',
+      'westwood','brentwood','century city','west hollywood','malibu','thousand oaks',
+      'ventura','irvine','santa ana','anaheim','fullerton','orange'],
+    states: [],
+  },
+  boston: {
+    label: 'Boston Metro',
+    cities: ['boston','cambridge','somerville','brookline','newton','quincy','waltham','woburn',
+      'burlington','lexington','concord','needham','wellesley','natick','framingham',
+      'marlborough','westborough','dedham','canton','norwood','weston','wayland',
+      'sudbury','acton','bedford','billerica','chelmsford','lowell','andover','north andover',
+      'peabody','danvers','beverly','salem'],
+    states: [],
+  },
+  dc: {
+    label: 'Washington DC',
+    cities: ['washington','washington dc','arlington','alexandria','mclean','bethesda',
+      'chevy chase','rockville','gaithersburg','falls church','fairfax','reston','tysons',
+      'herndon','chantilly','ashburn','leesburg','silver spring','potomac','kensington',
+      'hyattsville','college park','annapolis','baltimore'],
+    states: [],
+  },
+  chicago: {
+    label: 'Chicago',
+    cities: ['chicago','evanston','oak park','naperville','schaumburg','rosemont','deerfield',
+      'lake forest','libertyville','wilmette','winnetka','glencoe','highland park',
+      'northbrook','glenview','skokie','des plaines','arlington heights','aurora',
+      'joliet','elgin','waukegan','wheaton','lisle','downers grove','lombard'],
+    states: [],
+  },
+  seattle: {
+    label: 'Seattle',
+    cities: ['seattle','bellevue','redmond','kirkland','bothell','renton','tacoma','issaquah',
+      'sammamish','kenmore','woodinville','mercer island','bainbridge island','federal way',
+      'tukwila','burien','shoreline','lynnwood','edmonds','everett'],
+    states: [],
+  },
+  dallas: {
+    label: 'Dallas / Fort Worth',
+    cities: ['dallas','fort worth','plano','irving','frisco','allen','mckinney','arlington',
+      'grand prairie','garland','mesquite','carrollton','richardson','addison','lewisville',
+      'denton','flower mound','southlake','grapevine','colleyville','hurst','bedford','euless'],
+    states: [],
+  },
+  austin: {
+    label: 'Austin',
+    cities: ['austin','round rock','cedar park','georgetown','pflugerville','kyle','buda',
+      'san marcos','leander','liberty hill','lakeway','bee cave','west lake hills'],
+    states: [],
+  },
+  atlanta: {
+    label: 'Atlanta',
+    cities: ['atlanta','buckhead','alpharetta','marietta','roswell','sandy springs','dunwoody',
+      'smyrna','kennesaw','woodstock','cumming','johns creek','peachtree city','fayetteville',
+      'decatur','stone mountain','tucker','norcross','duluth','suwanee','lawrenceville'],
+    states: [],
+  },
+  miami: {
+    label: 'Miami',
+    cities: ['miami','miami beach','coral gables','brickell','coconut grove','fort lauderdale',
+      'hollywood','pembroke pines','miramar','hialeah','doral','aventura','boca raton',
+      'delray beach','west palm beach','palm beach','wellington','boynton beach'],
+    states: [],
+  },
+  denver: {
+    label: 'Denver',
+    cities: ['denver','boulder','aurora','lakewood','thornton','arvada','westminster',
+      'englewood','littleton','highlands ranch','centennial','parker','castle rock',
+      'fort collins','colorado springs'],
+    states: [],
+  },
+};
+
+function getMetro(contact) {
+  const city  = (contact.city  || '').toLowerCase().trim();
+  const state = (contact.state || '').toLowerCase().trim();
+  if (!city && !state) return null;
+  for (const [key, metro] of Object.entries(METROS)) {
+    if (metro.cities.some(c => city.includes(c) || c.includes(city) && city.length > 3)) return key;
+  }
+  return city || state ? 'other' : null;
+}
+
 let allContacts = [];
 let activeFilter = 'all';
+let activeMetro  = '';
 let selectedIds = new Set();
 let removedIds  = new Set(JSON.parse(localStorage.getItem('fg-removed')  || '[]'));
 let textedLog   = JSON.parse(localStorage.getItem('fg-texted-log') || '[]');
@@ -261,8 +391,12 @@ function renderCard(c) {
   const wasTexted  = textedIds.has(c.id);
   const p = ph(c);
   const pl = priLabel(c.priority);
-  const f1k = c.fortuneRank ? `<span class="f1k">#${c.fortuneRank}</span>` : '';
-  const rq  = c.rqScore     ? `<span class="rq">RQ ${c.rqScore}</span>` : '';
+  const f1k      = c.fortuneRank ? `<span class="f1k">#${c.fortuneRank}</span>` : '';
+  const rq       = c.rqScore     ? `<span class="rq">RQ ${c.rqScore}</span>` : '';
+  const cityStr  = [c.city, c.state].filter(Boolean).join(', ');
+  const metroKey = getMetro(c);
+  const metroLbl = metroKey && METROS[metroKey] ? ` · ${METROS[metroKey].label}` : (cityStr ? '' : '');
+  const cityDisp = cityStr ? `<span style="font-size:12px;color:#666;font-weight:600;"> · 📍 ${cityStr}${metroLbl}</span>` : '';
 
   const badges = [];
   if (isRemoved)           badges.push(`<span class="badge b-removed">🚫 Removed</span>`);
@@ -278,7 +412,7 @@ function renderCard(c) {
   else if (c.active)     badges.push(`<span class="badge b-active">⚡ Active ${days}d ago · Text Keith</span>`);
   else                   badges.push(`<span class="badge b-inactive">↻ Inactive ${days}d · Re-engage</span>`);
 
-  const exportLine = `${c.name} | ${c.company}${c.fortuneRank ? ` (#${c.fortuneRank})` : ''} | ${c.title} | ${c.mobile || 'NO MOBILE'}`;
+  const exportLine = `${c.name} | ${c.company}${c.fortuneRank?` (#${c.fortuneRank})`:''} | ${c.title}${cityStr?' | '+cityStr:''} | ${c.mobile||'NO MOBILE'}`;
 
   const removeBtn = isRemoved
     ? `<button class="btn-sm btn-restore-sm" onclick="toggleRemove('${c.id}')">↩ Restore</button>`
@@ -289,7 +423,7 @@ function renderCard(c) {
       <input type="checkbox" class="card-cb" ${isSelected?'checked':''} onchange="toggleSelect('${c.id}')">
       <div>
         <div class="card-name">${c.name}</div>
-        <div class="card-sub"><span class="co">${c.company||'—'}</span>${f1k}${rq}${c.title?' · '+c.title:''}</div>
+        <div class="card-sub"><span class="co">${c.company||'—'}</span>${f1k}${rq}${c.title?' · '+c.title:''}${cityDisp}</div>
         <div class="card-badges">${badges.join('')}</div>
         <div class="card-export">${exportLine}</div>
         <div class="card-actions">${removeBtn}</div>
@@ -306,19 +440,31 @@ function renderCard(c) {
 
 function applyFilter(contacts) {
   const textedIds = textedThisWeek();
+  let result;
   switch (activeFilter) {
-    case 'all':     return contacts.filter(c => !removedIds.has(c.id));
+    case 'all':     result = contacts.filter(c => !removedIds.has(c.id)); break;
     case 'removed': return contacts.filter(c =>  removedIds.has(c.id));
-    case 'texted':  return contacts.filter(c =>  textedIds.has(c.id) && !removedIds.has(c.id));
-    case 'deal':    return contacts.filter(c =>  c.hasOpenDeal && !removedIds.has(c.id));
-    case 'active':  return contacts.filter(c =>  c.active && !removedIds.has(c.id));
-    case 'ric':     return contacts.filter(c =>  c.events.ric && !removedIds.has(c.id));
-    case 'dinner':  return contacts.filter(c =>  c.events.ceo_dinner && !removedIds.has(c.id));
-    case 'scott':   return contacts.filter(c =>  c.events.scott_cook && !removedIds.has(c.id));
-    case 'f500':    return contacts.filter(c =>  c.fortuneRank && !removedIds.has(c.id));
-    case 'mobile':  return contacts.filter(c =>  c.mobile && !removedIds.has(c.id));
-    default:        return contacts.filter(c => !removedIds.has(c.id));
+    case 'texted':  result = contacts.filter(c =>  textedIds.has(c.id) && !removedIds.has(c.id)); break;
+    case 'deal':    result = contacts.filter(c =>  c.hasOpenDeal && !removedIds.has(c.id)); break;
+    case 'active':  result = contacts.filter(c =>  c.active && !removedIds.has(c.id)); break;
+    case 'ric':     result = contacts.filter(c =>  c.events.ric && !removedIds.has(c.id)); break;
+    case 'dinner':  result = contacts.filter(c =>  c.events.ceo_dinner && !removedIds.has(c.id)); break;
+    case 'scott':   result = contacts.filter(c =>  c.events.scott_cook && !removedIds.has(c.id)); break;
+    case 'f500':    result = contacts.filter(c =>  c.fortuneRank && !removedIds.has(c.id)); break;
+    case 'mobile':  result = contacts.filter(c =>  c.mobile && !removedIds.has(c.id)); break;
+    default:        result = contacts.filter(c => !removedIds.has(c.id));
   }
+  // Apply metro filter on top
+  if (activeMetro) {
+    result = result.filter(c => getMetro(c) === activeMetro);
+  }
+  return result;
+}
+
+function onMetroChange(sel) {
+  activeMetro = sel.value;
+  sel.classList.toggle('active', !!activeMetro);
+  render();
 }
 
 function applySort(contacts) {
@@ -367,7 +513,7 @@ function updateStats(contacts) {
 function buildText(contacts) {
   const date = new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
   const lines = contacts.filter(c=>c.mobile&&!removedIds.has(c.id))
-    .map(c=>`${c.name} | ${c.company}${c.fortuneRank?` (#${c.fortuneRank})`:''} | ${c.title} | ${c.mobile}`);
+    .map(c=>`${c.name} | ${c.company}${c.fortuneRank?` (#${c.fortuneRank})`:''} | ${c.title}${[c.city,c.state].filter(Boolean).length?' | '+[c.city,c.state].filter(Boolean).join(', '):''} | ${c.mobile}`);
   return `Keith — ${date} Texting List (${lines.length} contacts)\n${'─'.repeat(60)}\n\n`+lines.join('\n');
 }
 
