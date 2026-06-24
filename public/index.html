@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>FG CIO/CTO Texting Campaign</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f4f6f9; color: #1a1a2e; }
+
+    header {
+      background: #1a1a2e;
+      color: white;
+      padding: 24px 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    header h1 { font-size: 22px; font-weight: 700; letter-spacing: 0.5px; }
+    header span { font-size: 13px; opacity: 0.6; }
+
+    .stats-bar {
+      background: white;
+      border-bottom: 1px solid #e5e7eb;
+      padding: 16px 40px;
+      display: flex;
+      gap: 40px;
+      flex-wrap: wrap;
+    }
+    .stat .num { font-size: 28px; font-weight: 700; color: #1a1a2e; }
+    .stat .label { font-size: 12px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
+
+    .toolbar {
+      padding: 20px 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .toolbar h2 { font-size: 16px; font-weight: 600; color: #374151; }
+
+    .btn {
+      border: none;
+      padding: 10px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      transition: background 0.2s;
+    }
+    .btn-dark { background: #1a1a2e; color: white; }
+    .btn-dark:hover { background: #2d2d4e; }
+    .btn-dark.copied { background: #16a34a; }
+    .btn-outline { background: #f3f4f6; color: #374151; border: 1px solid #d1d5db; }
+    .btn-outline:hover { background: #e5e7eb; }
+
+    .contact-list {
+      padding: 0 40px 40px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .contact-card {
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      transition: box-shadow 0.15s;
+    }
+    .contact-card:hover { box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
+    .contact-card.active { border-left: 4px solid #16a34a; }
+    .contact-card.inactive { border-left: 4px solid #f59e0b; }
+
+    .contact-left { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 0; }
+    .contact-name { font-size: 16px; font-weight: 700; color: #111827; }
+    .contact-meta { font-size: 13px; color: #6b7280; }
+    .contact-company { font-weight: 600; color: #374151; }
+    .contact-status { font-size: 11px; margin-top: 4px; }
+    .status-active { color: #16a34a; font-weight: 600; }
+    .status-inactive { color: #f59e0b; font-weight: 600; }
+    .copy-line { font-family: 'Courier New', monospace; font-size: 11px; color: #9ca3af; margin-top: 4px; word-break: break-all; }
+
+    .contact-right { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; flex-shrink: 0; }
+    .phone-badge {
+      border-radius: 20px;
+      padding: 4px 12px;
+      font-size: 13px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .phone-mobile { background: #eff6ff; color: #2563eb; border: 1px solid #bfdbfe; }
+    .phone-office { background: #f0fdf4; color: #16a34a; border: 1px solid #bbf7d0; }
+    .phone-none { background: #fef9c3; color: #854d0e; border: 1px solid #fde68a; }
+    .phone-type { font-size: 11px; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.5px; }
+
+    #keith-export {
+      display: none;
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      margin: 0 40px 40px;
+      padding: 20px;
+    }
+    #keith-export h3 { font-size: 14px; font-weight: 700; margin-bottom: 12px; color: #374151; }
+    #keith-export pre { font-family: 'Courier New', monospace; font-size: 13px; line-height: 2; color: #111827; white-space: pre-wrap; }
+
+    .loading { text-align: center; padding: 60px; color: #6b7280; font-size: 16px; }
+    .error { text-align: center; padding: 40px; color: #dc2626; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>FG CIO/CTO Texting Campaign List</h1>
+  <span id="generated-at">Loading live from HubSpot…</span>
+</header>
+
+<div class="stats-bar">
+  <div class="stat"><div class="num" id="stat-total">—</div><div class="label">Total Contacts</div></div>
+  <div class="stat"><div class="num" id="stat-phone">—</div><div class="label">Have Phone</div></div>
+  <div class="stat"><div class="num" id="stat-active">—</div><div class="label">Active ≤30 days</div></div>
+  <div class="stat"><div class="num" id="stat-inactive">—</div><div class="label">Inactive 30+ days</div></div>
+</div>
+
+<div class="toolbar">
+  <h2>Keith-Ready Texting List</h2>
+  <div style="display:flex;gap:10px;flex-wrap:wrap;">
+    <button class="btn btn-outline" onclick="toggleExport()">Show Keith Export</button>
+    <button class="btn btn-dark" id="copy-btn" onclick="copyAll()">Copy All for Keith</button>
+  </div>
+</div>
+
+<div id="contact-list" class="contact-list">
+  <div class="loading">Pulling live data from HubSpot…</div>
+</div>
+
+<div id="keith-export">
+  <h3>Keith-Ready Export — copy and send directly (contacts with phones only):</h3>
+  <pre id="export-text"></pre>
+</div>
+
+<script>
+let allContacts = [];
+
+function phoneDisplay(c) {
+  if (c.mobile) return { num: c.mobile, type: 'mobile', cls: 'phone-mobile' };
+  if (c.phone) return { num: c.phone, type: 'office/direct', cls: 'phone-office' };
+  return { num: 'No phone on record', type: '', cls: 'phone-none' };
+}
+
+function renderContacts(contacts) {
+  const list = document.getElementById('contact-list');
+  list.innerHTML = '';
+
+  if (!contacts.length) {
+    list.innerHTML = '<div class="loading">No contacts found.</div>';
+    return;
+  }
+
+  contacts.forEach(c => {
+    const ph = phoneDisplay(c);
+    const card = document.createElement('div');
+    card.className = `contact-card ${c.active ? 'active' : 'inactive'}`;
+
+    let statusLine = '';
+    if (c.lastContactedDays !== null) {
+      statusLine = c.active
+        ? `<span class="status-active">Active — last contacted ${c.lastContactedDays}d ago · Suggest: Keith text</span>`
+        : `<span class="status-inactive">Inactive — ${c.lastContactedDays}d since last contact · Suggest: email outreach</span>`;
+    } else {
+      statusLine = `<span class="status-inactive">No contact on record</span>`;
+    }
+
+    const exportLine = `${c.name}, ${c.company}, ${c.title}, ${ph.num !== 'No phone on record' ? ph.num : 'NO PHONE'}`;
+
+    card.innerHTML = `
+      <div class="contact-left">
+        <div class="contact-name">${c.name}</div>
+        <div class="contact-meta"><span class="contact-company">${c.company || '—'}</span>${c.title ? ' · ' + c.title : ''}</div>
+        <div class="contact-status">${statusLine}</div>
+        <div class="copy-line">${exportLine}</div>
+      </div>
+      <div class="contact-right">
+        <span class="phone-badge ${ph.cls}">${ph.num}</span>
+        <span class="phone-type">${ph.type}</span>
+      </div>
+    `;
+    list.appendChild(card);
+  });
+}
+
+function updateStats(contacts) {
+  document.getElementById('stat-total').textContent = contacts.length;
+  document.getElementById('stat-phone').textContent = contacts.filter(c => c.mobile || c.phone).length;
+  document.getElementById('stat-active').textContent = contacts.filter(c => c.active).length;
+  document.getElementById('stat-inactive').textContent = contacts.filter(c => !c.active).length;
+}
+
+function buildExportText() {
+  return allContacts
+    .filter(c => c.mobile || c.phone)
+    .map(c => {
+      const ph = c.mobile || c.phone;
+      return `${c.name}, ${c.company}, ${c.title}, ${ph}`;
+    })
+    .join('\n');
+}
+
+function copyAll() {
+  const text = buildExportText();
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById('copy-btn');
+    btn.textContent = 'Copied!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Copy All for Keith'; btn.classList.remove('copied'); }, 2000);
+  });
+}
+
+function toggleExport() {
+  const box = document.getElementById('keith-export');
+  const btn = document.querySelector('.btn-outline');
+  if (box.style.display === 'block') {
+    box.style.display = 'none';
+    btn.textContent = 'Show Keith Export';
+  } else {
+    document.getElementById('export-text').textContent = buildExportText();
+    box.style.display = 'block';
+    btn.textContent = 'Hide Export';
+  }
+}
+
+async function loadContacts() {
+  try {
+    const res = await fetch('/api/contacts');
+    if (!res.ok) throw new Error(`Server error: ${res.status}`);
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+
+    allContacts = data.contacts;
+    const ts = new Date(data.generatedAt).toLocaleString();
+    document.getElementById('generated-at').textContent = `Live from HubSpot · ${ts}`;
+
+    updateStats(allContacts);
+    renderContacts(allContacts);
+  } catch (err) {
+    document.getElementById('contact-list').innerHTML = `<div class="error">Error loading contacts: ${err.message}</div>`;
+    document.getElementById('generated-at').textContent = 'Failed to load';
+  }
+}
+
+loadContacts();
+</script>
+</body>
+</html>
