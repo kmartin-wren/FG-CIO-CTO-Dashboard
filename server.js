@@ -185,6 +185,60 @@ function priorityScore(c) {
 // Cache for 10 minutes
 let cache = null, cacheTime = 0;
 const CACHE_TTL = 10 * 60 * 1000;
+// Track when we last did a full fetch so incremental checks only pull newer contacts
+let lastFullFetchDate = null;
+
+function shapeContact(c, openDealIds, eventMap) {
+  const p = c.properties;
+  const lastContact = p.notes_last_contacted || p.hs_email_last_send_date || null;
+  const days = daysSince(lastContact);
+  const fortuneRank = getFortunRank(p.company);
+  const events = eventMap[c.id] || { ric: false, ceo_dinner: false, scott_cook: false };
+  const contact = {
+    id: c.id,
+    name: `${p.firstname || ''} ${p.lastname || ''}`.trim(),
+    title: p.jobtitle || '',
+    company: p.company || '',
+    mobile: p.mobilephone || '',
+    phone: p.phone || '',
+    leadStatus: p.hs_lead_status || '',
+    lastContactedDays: days,
+    lastContactedDate: lastContact,
+    active: days !== null && days <= 30,
+    hasOpenDeal: openDealIds.has(c.id),
+    hasAnyDeal: parseInt(p.num_associated_deals || '0') > 0,
+    fortuneRank,
+    events,
+    hubspotScore: parseInt(p.hubspotscore || '0'),
+    createdAt: c.createdAt || null,
+    isNew: false,
+  };
+  contact.priority = priorityScore(contact);
+  return contact;
+}
+
+async function fetchNewContacts(sinceDate) {
+  // Only fetch contacts created after sinceDate using createdate filter
+  const sinceStr = sinceDate.toISOString().split('T')[0]; // YYYY-MM-DD
+  const all = [], seen = new Set();
+  const filterGroups = TITLE_FILTERS.map(t => ({
+    filters: [
+      { propertyName: 'jobtitle', operator: 'CONTAINS_TOKEN', value: t },
+      { propertyName: 'createdate', operator: 'GTE', value: sinceStr },
+    ],
+  }));
+  const BATCH = 5;
+  for (let i = 0; i < filterGroups.length; i += BATCH) {
+    if (i > 0) await sleep(500);
+    const batch = filterGroups.slice(i, i + BATCH);
+    const body = { filterGroups: batch, properties: CONTACT_PROPS, limit: 100 };
+    const data = await hsPost('/crm/v3/objects/contacts/search', body);
+    for (const c of data.results || []) {
+      if (!seen.has(c.id)) { seen.add(c.id); all.push(c); }
+    }
+  }
+  return all;
+}
 
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -201,41 +255,14 @@ app.get('/api/contacts', async (req, res) => {
       fetchEventContactIds().catch(e => { console.warn('Events fetch failed:', e.message); return {}; }),
     ]);
 
-    console.log(`Open deal contacts: ${openDealIds.size}, Event contacts: ${Object.keys(eventMap).length}`);
-
     const contacts = raw
       .filter(c => !isAssistant(c.properties.jobtitle))
-      .map(c => {
-        const p = c.properties;
-        const lastContact = p.notes_last_contacted || p.hs_email_last_send_date || null;
-        const days = daysSince(lastContact);
-        const fortuneRank = getFortunRank(p.company);
-        const events = eventMap[c.id] || { ric: false, ceo_dinner: false, scott_cook: false };
-
-        const contact = {
-          id: c.id,
-          name: `${p.firstname || ''} ${p.lastname || ''}`.trim(),
-          title: p.jobtitle || '',
-          company: p.company || '',
-          mobile: p.mobilephone || '',
-          phone: p.phone || '',
-          leadStatus: p.hs_lead_status || '',
-          lastContactedDays: days,
-          lastContactedDate: lastContact,
-          active: days !== null && days <= 30,
-          hasOpenDeal: openDealIds.has(c.id),
-          hasAnyDeal: parseInt(p.num_associated_deals || '0') > 0,
-          fortuneRank,
-          events,
-          hubspotScore: parseInt(p.hubspotscore || '0'),
-        };
-        contact.priority = priorityScore(contact);
-        return contact;
-      })
+      .map(c => shapeContact(c, openDealIds, eventMap))
       .filter(c => c.name)
       .sort((a, b) => b.priority - a.priority);
 
-    cache = { contacts, generatedAt: new Date().toISOString() };
+    lastFullFetchDate = new Date();
+    cache = { contacts, generatedAt: new Date().toISOString(), newCount: 0 };
     cacheTime = Date.now();
     res.json(cache);
   } catch (err) {
@@ -244,8 +271,48 @@ app.get('/api/contacts', async (req, res) => {
   }
 });
 
+// Lightweight incremental check — only pulls contacts created since last full fetch
+app.get('/api/check-new', async (req, res) => {
+  try {
+    if (!lastFullFetchDate) return res.json({ newContacts: [], message: 'No baseline yet — load /api/contacts first' });
+
+    console.log(`Checking for new contacts since ${lastFullFetchDate.toISOString()}…`);
+    const raw = await fetchNewContacts(lastFullFetchDate);
+    const fresh = raw.filter(c => !isAssistant(c.properties.jobtitle));
+
+    if (!fresh.length) {
+      console.log('No new contacts found.');
+      return res.json({ newContacts: [], checkedAt: new Date().toISOString() });
+    }
+
+    // Merge into cache without re-fetching deals/events (keep it cheap)
+    const shaped = fresh
+      .map(c => { const s = shapeContact(c, new Set(), {}); s.isNew = true; return s; })
+      .filter(c => c.name);
+
+    if (cache) {
+      const existingIds = new Set(cache.contacts.map(c => c.id));
+      const brandNew = shaped.filter(c => !existingIds.has(c.id));
+      if (brandNew.length) {
+        cache.contacts = [...brandNew, ...cache.contacts];
+        cache.newCount = (cache.newCount || 0) + brandNew.length;
+        cache.lastChecked = new Date().toISOString();
+        lastFullFetchDate = new Date();
+        console.log(`Added ${brandNew.length} new contacts to cache.`);
+        return res.json({ newContacts: brandNew, checkedAt: cache.lastChecked });
+      }
+    }
+
+    lastFullFetchDate = new Date();
+    res.json({ newContacts: [], checkedAt: new Date().toISOString() });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.get('/api/refresh', (req, res) => {
-  cache = null; cacheTime = 0;
+  cache = null; cacheTime = 0; lastFullFetchDate = null;
   res.json({ ok: true });
 });
 

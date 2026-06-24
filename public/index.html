@@ -13,6 +13,11 @@
     #gen-time{font-size:13px;opacity:.65;}
     .btn-refresh{background:transparent;border:1px solid rgba(255,255,255,.3);color:#fff;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600;}
     .btn-refresh:hover{border-color:#fff;}
+    .btn-check-new{background:#16a34a;border:none;color:#fff;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:700;}
+    .btn-check-new:hover{background:#15803d;}
+    .btn-check-new:disabled{background:#666;cursor:default;}
+    .new-toast{display:none;background:#dcfce7;border:2px solid #16a34a;color:#15803d;padding:10px 20px;border-radius:8px;margin:0 32px 12px;font-size:14px;font-weight:700;}
+    .b-new{background:#dcfce7;color:#15803d;border:1px solid #86efac;}
 
     .stats{background:#fff;border-bottom:2px solid #dde1e8;padding:16px 32px;display:flex;gap:32px;flex-wrap:wrap;align-items:center;}
     .stat-item .num{font-size:26px;font-weight:800;color:#1a1a2e;line-height:1;}
@@ -96,7 +101,8 @@
   <h1>FG CIO/CTO Texting Campaign</h1>
   <div style="display:flex;align-items:center;gap:16px;">
     <span id="gen-time">Loading from HubSpot…</span>
-    <button class="btn-refresh" onclick="refreshData()">↻ Refresh</button>
+    <button class="btn-check-new" id="btn-check-new" onclick="checkNew()">✦ Check New</button>
+    <button class="btn-refresh" onclick="refreshData()">↻ Full Refresh</button>
   </div>
 </header>
 
@@ -141,6 +147,7 @@
   </div>
 </div>
 
+<div class="new-toast" id="new-toast"></div>
 <div class="contact-list" id="contact-list">
   <div class="loading">Pulling live data from HubSpot — first load takes ~30 seconds…</div>
 </div>
@@ -203,6 +210,7 @@ function renderCard(c) {
 
   const badges = [];
   if (isRemoved)             badges.push(`<span class="badge b-removed">🚫 Removed from campaign</span>`);
+  if (c.isNew)               badges.push(`<span class="badge b-new">✦ New Contact</span>`);
   if (c.hasOpenDeal)         badges.push(`<span class="badge b-deal">🤝 Open Deal</span>`);
   if (c.events.ric)          badges.push(`<span class="badge b-ric">🎯 RIC Attendee</span>`);
   if (c.events.ceo_dinner)   badges.push(`<span class="badge b-dinner">🍽 CEO Dinner</span>`);
@@ -340,6 +348,40 @@ async function loadData() {
   } catch (err) {
     document.getElementById('contact-list').innerHTML = `<div class="error-msg">Error: ${err.message}</div>`;
     document.getElementById('gen-time').textContent = 'Failed to load';
+  }
+}
+
+async function checkNew() {
+  const btn = document.getElementById('btn-check-new');
+  btn.disabled = true;
+  btn.textContent = 'Checking…';
+  try {
+    const res = await fetch('/api/check-new');
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    const n = data.newContacts?.length || 0;
+    if (n > 0) {
+      allContacts = [...data.newContacts, ...allContacts];
+      updateStats(allContacts);
+      applyFilters();
+      const toast = document.getElementById('new-toast');
+      toast.style.display = 'block';
+      toast.textContent = `✦ ${n} new CIO/C-suite contact${n > 1 ? 's' : ''} added to HubSpot since last check`;
+      setTimeout(() => { toast.style.display = 'none'; }, 8000);
+    } else {
+      const toast = document.getElementById('new-toast');
+      toast.style.display = 'block';
+      toast.style.background = '#f9fafb';
+      toast.style.borderColor = '#d1d5db';
+      toast.style.color = '#555';
+      toast.textContent = `No new C-suite contacts since last check (${new Date(data.checkedAt).toLocaleTimeString()})`;
+      setTimeout(() => { toast.style.display = 'none'; toast.style.background=''; toast.style.borderColor=''; toast.style.color=''; }, 5000);
+    }
+  } catch (err) {
+    alert('Check failed: ' + err.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '✦ Check New';
   }
 }
 
