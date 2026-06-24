@@ -674,7 +674,7 @@ function exportSelected() {
   if (!selectedIds.size) return;
   const contacts = allContacts.filter(c => selectedIds.has(c.id) && c.mobile);
   if (!contacts.length) { alert('No selected contacts have mobile numbers.'); return; }
-  const lines = contacts.map(c => `${c.name} | ${c.company} | ${abbreviateTitle(c.title)} | ${c.mobile}`);
+  const lines = contacts.map(c => `${c.name}, ${c.company}, ${abbreviateTitle(c.title)}, ${c.mobile}`);
   const text = lines.join('\n');
   navigator.clipboard.writeText(text).then(() => {
     markAsTexted(contacts.map(c => c.id));
