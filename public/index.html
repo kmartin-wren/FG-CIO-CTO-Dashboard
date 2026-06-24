@@ -25,7 +25,7 @@
 
     /* FILTERS — single-select OR logic */
     .filter-bar{background:#fff;border-bottom:1px solid #dde1e8;padding:12px 32px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;}
-    .filter-bar label{font-size:11px;font-weight:800;color:#888;text-transform:uppercase;letter-spacing:.8px;margin-right:2px;}
+    .filter-bar label{font-size:10px;font-weight:800;color:#aaa;text-transform:uppercase;letter-spacing:.8px;margin-right:2px;white-space:nowrap;}
     .chip{padding:6px 14px;border-radius:20px;border:2px solid #dde1e8;background:#f5f6f8;color:#333;font-size:13px;font-weight:700;cursor:pointer;transition:all .15s;user-select:none;white-space:nowrap;}
     .chip:hover{border-color:#1a1a2e;color:#1a1a2e;}
     .chip.active{background:#1a1a2e;color:#fff;border-color:#1a1a2e;}
@@ -135,28 +135,30 @@
 </header>
 
 <div class="stats">
-  <div class="stat-item"><div class="num" id="s-total">—</div><div class="lbl">Total</div></div>
-  <div class="stat-item"><div class="num" id="s-mobile">—</div><div class="lbl">Have Mobile</div></div>
-  <div class="stat-item"><div class="num" id="s-active">—</div><div class="lbl">Active ≤30d</div></div>
-  <div class="stat-item"><div class="num" id="s-deal">—</div><div class="lbl">Open Deal</div></div>
-  <div class="stat-item"><div class="num" id="s-f500">—</div><div class="lbl">Fortune 500</div></div>
+  <div class="stat-item"><div class="num" id="s-textnow" style="color:#16a34a">—</div><div class="lbl">📲 Text Now</div></div>
+  <div class="stat-item"><div class="num" id="s-deal">—</div><div class="lbl">Open Deals</div></div>
   <div class="stat-item"><div class="num" id="s-ric">—</div><div class="lbl">RIC Attendees</div></div>
-  <div class="stat-item"><div class="num" id="s-removed">—</div><div class="lbl">Removed</div></div>
+  <div class="stat-item"><div class="num" id="s-texted">—</div><div class="lbl">Texted This Week</div></div>
+  <div class="stat-item"><div class="num" id="s-f500">—</div><div class="lbl">Fortune 500</div></div>
+  <div class="stat-item"><div class="num" id="s-mobile">—</div><div class="lbl">Have Mobile</div></div>
+  <div class="stat-item"><div class="num" id="s-total">—</div><div class="lbl">Total</div></div>
 </div>
 
 <div class="filter-bar">
-  <label>Show:</label>
-  <div class="chip active" data-f="all" onclick="setFilter(this)">All</div>
-  <div class="chip" data-f="deal" onclick="setFilter(this)">🤝 Open Deal</div>
-  <div class="chip" data-f="active" onclick="setFilter(this)">⚡ Active ≤30d</div>
-  <div class="chip" data-f="ric" onclick="setFilter(this)">🎯 RIC Attendee</div>
+  <label>ACTION:</label>
+  <div class="chip c-green active" data-f="textnow" onclick="setFilter(this)">📲 Text Now</div>
+  <div class="chip" data-f="deal" onclick="setFilter(this)">🤝 Open Deals</div>
+  <div class="chip" data-f="reengage" onclick="setFilter(this)">🔄 Re-Engage</div>
+  <div class="chip" data-f="untouched" onclick="setFilter(this)">💤 Untouched</div>
+  <div class="chip" data-f="all" onclick="setFilter(this)">All</div>
+  <div class="filter-sep"></div>
+  <label>NETWORK:</label>
+  <div class="chip" data-f="ric" onclick="setFilter(this)">🎯 RIC</div>
   <div class="chip" data-f="dinner" onclick="setFilter(this)">🍽 CEO Dinner</div>
   <div class="chip" data-f="scott" onclick="setFilter(this)">👤 Scott Cook</div>
-  <div class="filter-sep"></div>
   <div class="chip" data-f="f500" onclick="setFilter(this)">🏆 Fortune 500</div>
-  <div class="chip" data-f="mobile" onclick="setFilter(this)">📱 Mobile Only</div>
   <div class="filter-sep"></div>
-  <div class="chip c-green" data-f="texted" onclick="setFilter(this)">✓ Texted This Week</div>
+  <div class="chip c-green" data-f="texted" onclick="setFilter(this)">✓ Texted</div>
   <div class="chip c-red" data-f="removed" onclick="setFilter(this)">🚫 Removed</div>
   <div class="filter-sep"></div>
   <select class="metro-sel" id="metro-sel" onchange="onMetroChange(this)">
@@ -191,9 +193,8 @@
     </select>
   </div>
   <div class="toolbar-right">
-    <button class="btn btn-sel" id="btn-export-sel" onclick="exportSelected()">📋 Export Selected (<span id="sel-n">0</span>)</button>
-    <button class="btn btn-outline" onclick="toggleExportPanel()">📋 Keith Export</button>
-    <button class="btn btn-dark" id="btn-copy" onclick="copyForKeith()">Copy for Keith</button>
+    <button class="btn btn-sel" id="btn-export-sel" onclick="exportSelected()">📤 Send Selected to Keith (<span id="sel-n">0</span>)</button>
+    <button class="btn btn-dark" id="btn-copy" onclick="copyForKeith()">📋 Copy Keith's List</button>
   </div>
 </div>
 
@@ -319,7 +320,7 @@ function getMetro(contact) {
 }
 
 let allContacts = [];
-let activeFilter = 'all';
+let activeFilter = 'textnow';
 let activeMetro  = '';
 let selectedIds = new Set();
 let removedIds  = new Set(JSON.parse(localStorage.getItem('fg-removed')  || '[]'));
@@ -331,6 +332,25 @@ function textedThisWeek() {
   const ids = new Set();
   textedLog.filter(e => new Date(e.date).getTime() > weekAgo).forEach(e => e.ids.forEach(id => ids.add(id)));
   return ids;
+}
+
+function lastTextedDate(id) {
+  // returns formatted date string of most recent text, or null
+  let latest = null;
+  for (const entry of textedLog) {
+    if (entry.ids.includes(id)) {
+      const d = new Date(entry.date);
+      if (!latest || d > latest) latest = d;
+    }
+  }
+  if (!latest) return null;
+  return latest.toLocaleDateString('en-US', {month:'short', day:'numeric'});
+}
+
+function isTextNow(c) {
+  const textedIds = textedThisWeek();
+  return c.mobile && !removedIds.has(c.id) && !textedIds.has(c.id) &&
+    (c.hasOpenDeal || c.events.ric || c.events.ceo_dinner || c.events.scott_cook || c.priority >= 25);
 }
 
 function saveRemoved() { localStorage.setItem('fg-removed', JSON.stringify([...removedIds])); }
@@ -411,9 +431,11 @@ function renderCard(c) {
   const cityDisp = cityStr ? `<span style="font-size:12px;color:#666;font-weight:600;"> · 📍 ${cityStr}${metroLbl}</span>` : '';
 
   const badges = [];
+  const lastTexted = lastTextedDate(c.id);
   if (isRemoved)           badges.push(`<span class="badge b-removed">🚫 Removed</span>`);
   if (c.isNew)             badges.push(`<span class="badge b-new">✦ New</span>`);
-  if (wasTexted)           badges.push(`<span class="badge b-texted">✓ Texted this week</span>`);
+  if (wasTexted)           badges.push(`<span class="badge b-texted">✓ Texted ${lastTexted||'this week'}</span>`);
+  else if (lastTexted)     badges.push(`<span class="badge b-texted" style="opacity:.6">↩ Last texted ${lastTexted}</span>`);
   if (c.hasOpenDeal)       badges.push(`<span class="badge b-deal">🤝 Open Deal</span>`);
   if (c.events.ric)        badges.push(`<span class="badge b-ric">🎯 RIC</span>`);
   if (c.events.ceo_dinner) badges.push(`<span class="badge b-dinner">🍽 CEO Dinner</span>`);
@@ -460,22 +482,22 @@ function applyFilter(contacts) {
   const textedIds = textedThisWeek();
   let result;
   switch (activeFilter) {
-    case 'all':     result = contacts.filter(c => !removedIds.has(c.id)); break;
-    case 'removed': return contacts.filter(c =>  removedIds.has(c.id));
-    case 'texted':  result = contacts.filter(c =>  textedIds.has(c.id) && !removedIds.has(c.id)); break;
-    case 'deal':    result = contacts.filter(c =>  c.hasOpenDeal && !removedIds.has(c.id)); break;
-    case 'active':  result = contacts.filter(c =>  c.active && !removedIds.has(c.id)); break;
-    case 'ric':     result = contacts.filter(c =>  c.events.ric && !removedIds.has(c.id)); break;
-    case 'dinner':  result = contacts.filter(c =>  c.events.ceo_dinner && !removedIds.has(c.id)); break;
-    case 'scott':   result = contacts.filter(c =>  c.events.scott_cook && !removedIds.has(c.id)); break;
-    case 'f500':    result = contacts.filter(c =>  c.fortuneRank && !removedIds.has(c.id)); break;
-    case 'mobile':  result = contacts.filter(c =>  c.mobile && !removedIds.has(c.id)); break;
-    default:        result = contacts.filter(c => !removedIds.has(c.id));
+    case 'textnow':   result = contacts.filter(c => isTextNow(c)); break;
+    case 'all':       result = contacts.filter(c => !removedIds.has(c.id)); break;
+    case 'removed':   return contacts.filter(c =>  removedIds.has(c.id));
+    case 'texted':    result = contacts.filter(c =>  textedIds.has(c.id) && !removedIds.has(c.id)); break;
+    case 'deal':      result = contacts.filter(c =>  c.hasOpenDeal && !removedIds.has(c.id)); break;
+    case 'reengage':  result = contacts.filter(c => !removedIds.has(c.id) && c.mobile &&
+                        c.lastContactedDays !== null && c.lastContactedDays > 30 && c.lastContactedDays <= 180); break;
+    case 'untouched': result = contacts.filter(c => !removedIds.has(c.id) && c.mobile &&
+                        (c.lastContactedDays === null || c.lastContactedDays > 180)); break;
+    case 'ric':       result = contacts.filter(c =>  c.events.ric && !removedIds.has(c.id)); break;
+    case 'dinner':    result = contacts.filter(c =>  c.events.ceo_dinner && !removedIds.has(c.id)); break;
+    case 'scott':     result = contacts.filter(c =>  c.events.scott_cook && !removedIds.has(c.id)); break;
+    case 'f500':      result = contacts.filter(c =>  c.fortuneRank && !removedIds.has(c.id)); break;
+    default:          result = contacts.filter(c => !removedIds.has(c.id));
   }
-  // Apply metro filter on top
-  if (activeMetro) {
-    result = result.filter(c => getMetro(c) === activeMetro);
-  }
+  if (activeMetro) result = result.filter(c => getMetro(c) === activeMetro);
   return result;
 }
 
@@ -517,26 +539,54 @@ function render() {
 
 function updateStats(contacts) {
   const textedIds = textedThisWeek();
-  document.getElementById('s-total').textContent   = contacts.length;
-  document.getElementById('s-mobile').textContent  = contacts.filter(c=>c.mobile).length;
-  document.getElementById('s-active').textContent  = contacts.filter(c=>c.active).length;
+  document.getElementById('s-textnow').textContent = contacts.filter(c => isTextNow(c)).length;
   document.getElementById('s-deal').textContent    = contacts.filter(c=>c.hasOpenDeal).length;
-  document.getElementById('s-f500').textContent    = contacts.filter(c=>c.fortuneRank&&c.fortuneRank<=500).length;
   document.getElementById('s-ric').textContent     = contacts.filter(c=>c.events.ric).length;
-  document.getElementById('s-removed').textContent = removedIds.size;
+  document.getElementById('s-texted').textContent  = contacts.filter(c=>textedIds.has(c.id)&&!removedIds.has(c.id)).length;
+  document.getElementById('s-f500').textContent    = contacts.filter(c=>c.fortuneRank&&c.fortuneRank<=500).length;
+  document.getElementById('s-mobile').textContent  = contacts.filter(c=>c.mobile).length;
+  document.getElementById('s-total').textContent   = contacts.length;
 }
 
 // ── Export ────────────────────────────────────────────────────────────────────
 
+function contactLine(c) {
+  const loc = [c.city, c.state].filter(Boolean).join(', ');
+  const rank = c.fortuneRank ? ` (#${c.fortuneRank})` : '';
+  const lastDays = c.lastContactedDays !== null ? ` · Last contact: ${c.lastContactedDays}d ago` : ' · No contact on record';
+  return `${c.name} | ${c.company}${rank} | ${c.title}${loc ? ' | '+loc : ''} | ${c.mobile}${lastDays}`;
+}
+
 function buildText(contacts) {
   const date = new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
-  const lines = contacts.filter(c=>c.mobile&&!removedIds.has(c.id))
-    .map(c=>`${c.name} | ${c.company}${c.fortuneRank?` (#${c.fortuneRank})`:''} | ${c.title}${[c.city,c.state].filter(Boolean).length?' | '+[c.city,c.state].filter(Boolean).join(', '):''} | ${c.mobile}`);
-  return `Keith — ${date} Texting List (${lines.length} contacts)\n${'─'.repeat(60)}\n\n`+lines.join('\n');
+  const pool = contacts.filter(c => c.mobile && !removedIds.has(c.id));
+  const seen = new Set();
+  const sections = [];
+
+  function section(label, subset) {
+    const fresh = subset.filter(c => !seen.has(c.id));
+    if (!fresh.length) return;
+    fresh.forEach(c => seen.add(c.id));
+    sections.push(`${label} (${fresh.length})\n${'─'.repeat(50)}\n${fresh.map(contactLine).join('\n')}`);
+  }
+
+  section('🤝 OPEN DEALS',           pool.filter(c => c.hasOpenDeal));
+  section('🎯 RIC JUNE 2026',        pool.filter(c => c.events.ric && !c.hasOpenDeal));
+  section('🍽 CEO DINNER ATTENDEES', pool.filter(c => c.events.ceo_dinner));
+  section('👤 SCOTT COOK NETWORK',   pool.filter(c => c.events.scott_cook));
+  section('⚡ RECENTLY ACTIVE',      pool.filter(c => c.active));
+  section('🏆 FORTUNE 500',          pool.filter(c => c.fortuneRank && c.fortuneRank <= 500));
+  section('🔄 REMAINING',            pool.filter(c => !seen.has(c.id)));
+
+  const total = seen.size;
+  return `Keith — ${date} Texting List (${total} contacts)\n${'═'.repeat(60)}\n\n` + sections.join('\n\n');
 }
 
 function updateExportPanel(filtered) {
-  document.getElementById('export-text').textContent = buildText(filtered);
+  const panel = document.getElementById('export-panel');
+  if (panel.style.display === 'block') {
+    document.getElementById('export-text').textContent = buildText(filtered);
+  }
 }
 
 function markAsTexted(ids) {
@@ -550,18 +600,24 @@ function markAsTexted(ids) {
 }
 
 function copyForKeith() {
+  // Build the grouped report from the current filtered view
   const filtered = applySort(applyFilter(allContacts));
-  const textable = filtered.filter(c=>c.mobile&&!removedIds.has(c.id));
   const text = buildText(filtered);
+  const textable = filtered.filter(c=>c.mobile&&!removedIds.has(c.id));
   navigator.clipboard.writeText(text).then(()=>{
     markAsTexted(textable.map(c=>c.id));
     updateStats(allContacts);
     render();
     const btn = document.getElementById('btn-copy');
-    btn.textContent = '✓ Copied & Logged!';
+    btn.textContent = '✓ Copied!';
     btn.classList.add('copied');
-    setTimeout(()=>{ btn.textContent='Copy for Keith'; btn.classList.remove('copied'); }, 3000);
-    showToast(`✓ Copied ${textable.length} contacts — marked as Texted This Week`, 'green');
+    setTimeout(()=>{ btn.textContent='📋 Copy Keith\'s List'; btn.classList.remove('copied'); }, 3000);
+    // Show the export panel so Keith can see what was copied
+    const panel = document.getElementById('export-panel');
+    document.getElementById('export-text').textContent = text;
+    panel.style.display = 'block';
+    panel.scrollIntoView({behavior:'smooth', block:'start'});
+    showToast(`✓ Copied ${textable.length} contacts — marked as sent`, 'green');
   });
 }
 
@@ -575,17 +631,8 @@ function exportSelected() {
     selectedIds.clear();
     updateStats(allContacts);
     render();
-    showToast(`✓ Copied ${contacts.length} selected contacts — marked as Texted This Week`, 'green');
+    showToast(`✓ Copied ${contacts.length} selected contacts — marked as sent`, 'green');
   });
-}
-
-function toggleExportPanel() {
-  const panel = document.getElementById('export-panel');
-  const btn = document.querySelector('.btn-outline');
-  const vis = panel.style.display==='block';
-  panel.style.display = vis?'none':'block';
-  btn.textContent = vis?'📋 Keith Export':'▲ Hide Export';
-  if (!vis) panel.scrollIntoView({behavior:'smooth',block:'start'});
 }
 
 // ── Toast ──────────────────────────────────────────────────────────────────────
