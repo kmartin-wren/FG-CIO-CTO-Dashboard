@@ -146,11 +146,11 @@
 
 <div class="filter-bar">
   <label>ACTION:</label>
-  <div class="chip c-green active" data-f="textnow" onclick="setFilter(this)">📲 Text Now</div>
+  <div class="chip active" data-f="all" onclick="setFilter(this)">All</div>
+  <div class="chip c-green" data-f="textnow" onclick="setFilter(this)">📲 Text Now</div>
   <div class="chip" data-f="deal" onclick="setFilter(this)">🤝 Open Deals</div>
   <div class="chip" data-f="reengage" onclick="setFilter(this)">🔄 Re-Engage</div>
   <div class="chip" data-f="untouched" onclick="setFilter(this)">💤 Untouched</div>
-  <div class="chip" data-f="all" onclick="setFilter(this)">All</div>
   <div class="filter-sep"></div>
   <label>NETWORK:</label>
   <div class="chip" data-f="ric" onclick="setFilter(this)">🎯 RIC</div>
@@ -320,7 +320,7 @@ function getMetro(contact) {
 }
 
 let allContacts = [];
-let activeFilter = 'textnow';
+let activeFilter = 'all';
 let activeMetro  = '';
 let selectedIds = new Set();
 let removedIds  = new Set(JSON.parse(localStorage.getItem('fg-removed')  || '[]'));
