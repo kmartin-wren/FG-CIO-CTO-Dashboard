@@ -363,6 +363,55 @@ function toggleRemove(id) {
   render();
 }
 
+const TITLE_ACRONYMS = {
+  'chief information officer': 'CIO',
+  'chief technology officer': 'CTO',
+  'chief digital officer': 'CDO',
+  'chief data officer': 'CDO',
+  'chief ai officer': 'CAIO',
+  'chief artificial intelligence officer': 'CAIO',
+  'chief automation officer': 'CAO',
+  'chief information and digital officer': 'CIDO',
+  'chief information & digital officer': 'CIDO',
+  'chief digital information officer': 'CDIO',
+  'chief operating officer': 'COO',
+  'chief financial officer': 'CFO',
+  'chief human resources officer': 'CHRO',
+  'chief people officer': 'CPO',
+  'chief product officer': 'CPO',
+  'chief procurement officer': 'CPO',
+  'chief revenue officer': 'CRO',
+  'chief marketing officer': 'CMO',
+  'chief security officer': 'CSO',
+  'chief strategy officer': 'CSO',
+  'chief strategy and technology officer': 'CSTO',
+  'chief experience officer': 'CXO',
+  'chief innovation officer': 'CINO',
+  'chief transformation officer': 'CTO',
+  'chief growth officer': 'CGO',
+  'chief analytics officer': 'CAO',
+};
+
+function abbreviateTitle(title) {
+  if (!title) return '';
+  const lower = title.toLowerCase();
+  // Direct match
+  for (const [full, abbr] of Object.entries(TITLE_ACRONYMS)) {
+    if (lower.includes(full)) return abbr;
+  }
+  // Extract known prefixes: EVP, SVP, VP + C-suite
+  const prefixMatch = title.match(/^(EVP|SVP|VP|MD|GM|President|Director)[,\s]/i);
+  const prefix = prefixMatch ? prefixMatch[1].toUpperCase() + ' ' : '';
+  // Try to find a C-suite acronym in the title (e.g. "SVP & CIO")
+  const csuite = title.match(/\b(CIO|CTO|CDO|CIDO|CDIO|CAO|CAIO|COO|CFO|CHRO|CPO|CRO|CMO|CSO|CSTO|CINO)\b/);
+  if (csuite) return prefix + csuite[1];
+  // Fall back to initials of capitalized words
+  const initials = title.split(/[\s,&\/]+/)
+    .filter(w => /^[A-Z]/.test(w) && w.length > 1 && !['And','The','Of','For','&'].includes(w))
+    .map(w => w[0]).join('');
+  return initials || title;
+}
+
 function sentToKeith(id, btn) {
   markAsTexted([id]);
   btn.textContent = '✓ Sent to Keith';
@@ -623,15 +672,16 @@ function copyForKeith() {
 
 function exportSelected() {
   if (!selectedIds.size) return;
-  const contacts = allContacts.filter(c=>selectedIds.has(c.id)&&c.mobile);
+  const contacts = allContacts.filter(c => selectedIds.has(c.id) && c.mobile);
   if (!contacts.length) { alert('No selected contacts have mobile numbers.'); return; }
-  const text = buildText(contacts);
-  navigator.clipboard.writeText(text).then(()=>{
-    markAsTexted(contacts.map(c=>c.id));
+  const lines = contacts.map(c => `${c.name} | ${c.company} | ${abbreviateTitle(c.title)} | ${c.mobile}`);
+  const text = lines.join('\n');
+  navigator.clipboard.writeText(text).then(() => {
+    markAsTexted(contacts.map(c => c.id));
     selectedIds.clear();
     updateStats(allContacts);
     render();
-    showToast(`✓ Copied ${contacts.length} selected contacts — marked as sent`, 'green');
+    showToast(`✓ Copied ${contacts.length} contacts — ready to paste into iMessage`, 'green');
   });
 }
 
