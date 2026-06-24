@@ -96,6 +96,9 @@
     .btn-remove-sm:hover{background:#fee2e2;}
     .btn-restore-sm{color:#15803d;border-color:#86efac;background:#fff;}
     .btn-restore-sm:hover{background:#dcfce7;}
+    .btn-sent-sm{color:#fff;border-color:#16a34a;background:#16a34a;font-size:13px;padding:5px 14px;}
+    .btn-sent-sm:hover{background:#15803d;border-color:#15803d;}
+    .btn-sent-sm.done{color:#15803d;border-color:#86efac;background:#dcfce7;cursor:default;}
 
     /* Card right */
     .card-right{display:flex;flex-direction:column;align-items:flex-end;gap:7px;min-width:150px;}
@@ -340,6 +343,15 @@ function toggleRemove(id) {
   render();
 }
 
+function sentToKeith(id, btn) {
+  markAsTexted([id]);
+  btn.textContent = '✓ Sent to Keith';
+  btn.classList.add('done');
+  btn.disabled = true;
+  updateStats(allContacts);
+  showToast(`✓ Marked as sent to Keith`, 'green');
+}
+
 function toggleSelect(id) {
   selectedIds.has(id) ? selectedIds.delete(id) : selectedIds.add(id);
   updateSelCount();
@@ -418,6 +430,12 @@ function renderCard(c) {
     ? `<button class="btn-sm btn-restore-sm" onclick="toggleRemove('${c.id}')">↩ Restore</button>`
     : `<button class="btn-sm btn-remove-sm"  onclick="toggleRemove('${c.id}')">🚫 Remove</button>`;
 
+  const sentBtn = (!isRemoved && c.mobile)
+    ? (wasTexted
+        ? `<button class="btn-sm btn-sent-sm done" disabled>✓ Sent to Keith</button>`
+        : `<button class="btn-sm btn-sent-sm" onclick="sentToKeith('${c.id}', this)">📤 Sent to Keith</button>`)
+    : '';
+
   return `
     <div class="card ${cardClass(c)}${isSelected?' sel':''}" data-id="${c.id}">
       <input type="checkbox" class="card-cb" ${isSelected?'checked':''} onchange="toggleSelect('${c.id}')">
@@ -426,7 +444,7 @@ function renderCard(c) {
         <div class="card-sub"><span class="co">${c.company||'—'}</span>${f1k}${rq}${c.title?' · '+c.title:''}${cityDisp}</div>
         <div class="card-badges">${badges.join('')}</div>
         <div class="card-export">${exportLine}</div>
-        <div class="card-actions">${removeBtn}</div>
+        <div class="card-actions">${sentBtn}${removeBtn}</div>
       </div>
       <div class="card-right">
         <span class="pri-badge ${pl.cls}">${pl.t}</span>

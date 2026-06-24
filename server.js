@@ -243,6 +243,11 @@ function shapeContact(c, openDealIds, eventMap) {
   const events = { ...(eventMap[c.id] || { ric: false, ceo_dinner: false, scott_cook: false }) };
   const normalizedName = normalizeNameForRIC(`${p.firstname || ''} ${p.lastname || ''}`.trim());
   if (RIC_JUNE_2026.has(normalizedName)) events.ric = true;
+  // Detect Scott Cook from how_keith_s_met_him property (where campaign attendance is stored)
+  const howMet = (p.how_keith_s_met_him || '').toLowerCase();
+  if (howMet.includes('scott cook') || howMet.includes('disruptors dinner') || howMet.includes("guest of honor dinner at scott")) {
+    events.scott_cook = true;
+  }
   const contact = {
     id: c.id,
     name: `${p.firstname || ''} ${p.lastname || ''}`.trim(),
