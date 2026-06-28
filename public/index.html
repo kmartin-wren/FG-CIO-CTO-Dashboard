@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>FG CIO/CTO Texting Campaign</title>
+  <title>FG C-Suite 1000</title>
   <style>
     *{box-sizing:border-box;margin:0;padding:0;}
     body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#eef0f4;color:#111;}
@@ -125,7 +125,7 @@
 <body>
 
 <header>
-  <h1>FG CIO/CTO Texting Campaign</h1>
+  <h1>FG C-Suite 1000</h1>
   <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
     <span id="gen-time">Loading from HubSpot…</span>
     <div class="hdr-btns">
@@ -152,6 +152,11 @@
   <div class="chip" data-f="deal" onclick="setFilter(this)">🤝 Open Deals</div>
   <div class="chip" data-f="reengage" onclick="setFilter(this)">🔄 Re-Engage</div>
   <div class="chip" data-f="untouched" onclick="setFilter(this)">💤 Untouched</div>
+  <div class="filter-sep"></div>
+  <label>ROLE:</label>
+  <div class="chip" data-f="cio_cto" onclick="setFilter(this)">💻 CIO/CTO</div>
+  <div class="chip" data-f="chro" onclick="setFilter(this)">👥 CHRO/People</div>
+  <div class="chip" data-f="ceo" onclick="setFilter(this)">🏢 CEO</div>
   <div class="filter-sep"></div>
   <label>NETWORK:</label>
   <div class="chip" data-f="ric" onclick="setFilter(this)">🎯 RIC</div>
@@ -537,6 +542,9 @@ function applyFilter(contacts) {
   switch (activeFilter) {
     case 'textnow':   result = contacts.filter(c => isTextNow(c)); break;
     case 'all':       result = contacts.filter(c => !removedIds.has(c.id)); break;
+    case 'cio_cto':   result = contacts.filter(c => c.roleCategory === 'cio_cto' && !removedIds.has(c.id)); break;
+    case 'chro':      result = contacts.filter(c => c.roleCategory === 'chro' && !removedIds.has(c.id)); break;
+    case 'ceo':       result = contacts.filter(c => c.roleCategory === 'ceo' && !removedIds.has(c.id)); break;
     case 'removed':   return contacts.filter(c =>  removedIds.has(c.id));
     case 'texted':    result = contacts.filter(c =>  textedIds.has(c.id) && !removedIds.has(c.id)); break;
     case 'deal':      result = contacts.filter(c =>  c.hasOpenDeal && !removedIds.has(c.id)); break;

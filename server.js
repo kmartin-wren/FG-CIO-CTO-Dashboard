@@ -6,13 +6,40 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const HS_TOKEN = process.env.HUBSPOT_TOKEN;
 
-const TITLE_FILTERS = [
-  'CIO', 'CTO', 'CDO', 'CIDO',
-  'Chief Information Officer', 'Chief Technology Officer',
-  'Chief Digital Officer', 'Chief Information and Digital Officer',
-  'Chief AI Officer', 'Chief Automation Officer', 'Chief Data Officer',
-  'Chief Information & Digital Officer', 'Digital', 'Artificial Intelligence', 'Automation',
-];
+// Role categories — used for filtering in the frontend
+const ROLE_CATEGORIES = {
+  cio_cto: [
+    'CIO', 'CTO', 'CDO', 'CIDO',
+    'Chief Information Officer', 'Chief Technology Officer',
+    'Chief Digital Officer', 'Chief Information and Digital Officer',
+    'Chief AI Officer', 'Chief Automation Officer', 'Chief Data Officer',
+    'Chief Information & Digital Officer', 'Chief Data and Analytics',
+  ],
+  chro: [
+    'CHRO', 'CPO',
+    'Chief Human Resources Officer', 'Chief People Officer',
+    'Chief Talent Officer', 'Chief HR Officer',
+    'Head of Human Resources', 'Head of People',
+    'SVP Human Resources', 'SVP People',
+    'EVP Human Resources', 'EVP People',
+  ],
+  ceo: [
+    'CEO', 'Chief Executive Officer',
+    'President and CEO', 'President & CEO',
+    'Co-CEO', 'Co-Founder and CEO', 'Founder and CEO',
+  ],
+};
+
+const TITLE_FILTERS = Object.values(ROLE_CATEGORIES).flat();
+
+function getRoleCategory(title) {
+  if (!title) return 'other';
+  const t = title.toLowerCase();
+  for (const [cat, keywords] of Object.entries(ROLE_CATEGORIES)) {
+    if (keywords.some(k => t.includes(k.toLowerCase()))) return cat;
+  }
+  return 'other';
+}
 
 const CONTACT_PROPS = [
   'firstname', 'lastname', 'jobtitle', 'company',
@@ -252,6 +279,7 @@ function shapeContact(c, openDealIds, eventMap) {
     id: c.id,
     name: `${p.firstname || ''} ${p.lastname || ''}`.trim(),
     title: p.jobtitle || '',
+    roleCategory: getRoleCategory(p.jobtitle),
     company: p.company || '',
     mobile: p.mobilephone || '',
     phone: p.phone || '',
