@@ -193,8 +193,7 @@
     </select>
   </div>
   <div class="toolbar-right">
-    <button class="btn btn-sel" id="btn-export-sel" onclick="exportSelected()">📤 Send Selected to Keith (<span id="sel-n">0</span>)</button>
-    <button class="btn btn-dark" id="btn-copy" onclick="copyForKeith()">📋 Copy Keith's List</button>
+    <button class="btn btn-dark" id="btn-copy" onclick="copyForKeith()">📋 Copy for Keith</button>
   </div>
 </div>
 
@@ -649,40 +648,31 @@ function markAsTexted(ids) {
 }
 
 function copyForKeith() {
-  // Build the grouped report from the current filtered view
-  const filtered = applySort(applyFilter(allContacts));
-  const text = buildText(filtered);
-  const textable = filtered.filter(c=>c.mobile&&!removedIds.has(c.id));
-  navigator.clipboard.writeText(text).then(()=>{
-    markAsTexted(textable.map(c=>c.id));
-    updateStats(allContacts);
-    render();
-    const btn = document.getElementById('btn-copy');
-    btn.textContent = '✓ Copied!';
-    btn.classList.add('copied');
-    setTimeout(()=>{ btn.textContent='📋 Copy Keith\'s List'; btn.classList.remove('copied'); }, 3000);
-    // Show the export panel so Keith can see what was copied
-    const panel = document.getElementById('export-panel');
-    document.getElementById('export-text').textContent = text;
-    panel.style.display = 'block';
-    panel.scrollIntoView({behavior:'smooth', block:'start'});
-    showToast(`✓ Copied ${textable.length} contacts — marked as sent`, 'green');
-  });
-}
+  // Use checked contacts if any, otherwise use full filtered view
+  const pool = selectedIds.size
+    ? allContacts.filter(c => selectedIds.has(c.id))
+    : applySort(applyFilter(allContacts));
 
-function exportSelected() {
-  if (!selectedIds.size) return;
-  const contacts = allContacts.filter(c => selectedIds.has(c.id) && c.mobile);
-  if (!contacts.length) { alert('No selected contacts have mobile numbers.'); return; }
-  const lines = contacts.map(c => `${c.name}, ${c.company}, ${abbreviateTitle(c.title)}, ${c.mobile}`);
+  const textable = pool.filter(c => c.mobile && !removedIds.has(c.id));
+  if (!textable.length) { showToast('No contacts with mobile numbers to copy.', 'gray'); return; }
+
+  const lines = textable.map(c => `${c.name}, ${c.company}, ${abbreviateTitle(c.title)}, ${c.mobile}`);
   const text = lines.join('\n');
+
   navigator.clipboard.writeText(text).then(() => {
-    markAsTexted(contacts.map(c => c.id));
+    markAsTexted(textable.map(c => c.id));
     selectedIds.clear();
     updateStats(allContacts);
     render();
-    showToast(`✓ Copied ${contacts.length} contacts — ready to paste into iMessage`, 'green');
+    const btn = document.getElementById('btn-copy');
+    btn.textContent = `✓ Copied ${textable.length}!`;
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = '📋 Copy for Keith'; btn.classList.remove('copied'); }, 3000);
+    showToast(`✓ Copied ${textable.length} contacts — timestamped`, 'green');
   });
+}
+
+function exportSelected() { // kept as no-op for safety
 }
 
 // ── Toast ──────────────────────────────────────────────────────────────────────
