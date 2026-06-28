@@ -111,11 +111,12 @@
     .ph-none{background:#fef9c3;color:#854d0e;border:2px solid #fcd34d;font-size:12px;padding:4px 10px;}
     .phone-type{font-size:11px;font-weight:700;color:#888;text-transform:uppercase;}
 
-    /* Export panel */
-    #export-panel{display:none;background:#fff;border:2px solid #1a1a2e;border-radius:12px;margin:0 32px 32px;padding:22px;}
-    #export-panel h3{font-size:15px;font-weight:800;margin-bottom:3px;}
-    #export-panel p{font-size:13px;color:#555;margin-bottom:14px;}
-    #export-text{font-family:'Courier New',monospace;font-size:13px;line-height:2;color:#111;white-space:pre-wrap;background:#f8f9fa;border-radius:8px;padding:14px;max-height:380px;overflow-y:auto;}
+    /* Text draft panel */
+    #draft-panel{display:none;background:#fff;border:2px solid #1a1a2e;border-radius:12px;margin:0 32px 24px;padding:22px;}
+    #draft-panel h3{font-size:15px;font-weight:800;margin-bottom:4px;}
+    #draft-panel p{font-size:13px;color:#555;margin-bottom:12px;}
+    #draft-panel .draft-actions{display:flex;gap:8px;margin-top:12px;}
+    #draft-text{font-family:'Courier New',monospace;font-size:14px;line-height:1.8;color:#111;background:#f8f9fa;border:1px solid #dde1e8;border-radius:8px;padding:14px;width:100%;min-height:200px;resize:vertical;}
 
     .loading{text-align:center;padding:60px;font-size:16px;font-weight:600;color:#777;}
     .error-msg{text-align:center;padding:40px;font-size:15px;font-weight:700;color:#dc2626;}
@@ -201,10 +202,14 @@
   <div class="loading">Pulling live data from HubSpot — first load takes ~30 seconds…</div>
 </div>
 
-<div id="export-panel">
-  <h3>Keith-Ready Text List</h3>
-  <p>Mobile numbers only · Removed contacts excluded · Copy → paste directly into iMessage</p>
-  <pre id="export-text"></pre>
+<div id="draft-panel">
+  <h3>Text Draft</h3>
+  <p>Edit below before copying — then paste into iMessage</p>
+  <textarea id="draft-text" spellcheck="false"></textarea>
+  <div class="draft-actions">
+    <button class="btn btn-dark" onclick="copyDraft()">📋 Copy</button>
+    <button class="btn btn-outline" onclick="document.getElementById('draft-panel').style.display='none'">✕ Close</button>
+  </div>
 </div>
 
 <script>
@@ -659,16 +664,25 @@ function copyForKeith() {
   const lines = textable.map(c => `${c.name}, ${c.company}, ${abbreviateTitle(c.title)}, ${c.mobile}`);
   const text = lines.join('\n');
 
-  navigator.clipboard.writeText(text).then(() => {
-    markAsTexted(textable.map(c => c.id));
-    selectedIds.clear();
-    updateStats(allContacts);
-    render();
-    const btn = document.getElementById('btn-copy');
-    btn.textContent = `✓ Copied ${textable.length}!`;
-    btn.classList.add('copied');
-    setTimeout(() => { btn.textContent = '📋 Copy for Keith'; btn.classList.remove('copied'); }, 3000);
-    showToast(`✓ Copied ${textable.length} contacts — timestamped`, 'green');
+  // Mark as texted immediately (accountability timestamp)
+  markAsTexted(textable.map(c => c.id));
+  selectedIds.clear();
+  updateStats(allContacts);
+  render();
+
+  // Open editable draft panel
+  const panel = document.getElementById('draft-panel');
+  const ta = document.getElementById('draft-text');
+  ta.value = text;
+  panel.style.display = 'block';
+  panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  showToast(`${textable.length} contacts — edit then copy`, 'green');
+}
+
+function copyDraft() {
+  const ta = document.getElementById('draft-text');
+  navigator.clipboard.writeText(ta.value).then(() => {
+    showToast('✓ Copied — paste into iMessage', 'green');
   });
 }
 
