@@ -333,10 +333,15 @@ app.get('/api/contacts', async (req, res) => {
     const raw = await fetchAllContacts();
     console.log(`Got ${raw.length} raw contacts. Fetching deal associations…`);
 
+    // Time-box deal fetches to 45s — contacts always return even if deals are slow
+    const withTimeout = (p, ms, fallback) =>
+      Promise.race([p, new Promise(r => setTimeout(() => r(fallback), ms))]);
+
     const [openDealIds, eventMap] = await Promise.all([
-      fetchOpenDealContactIds().catch(e => { console.warn('Deals fetch failed:', e.message); return new Set(); }),
-      fetchEventContactIds().catch(e => { console.warn('Events fetch failed:', e.message); return {}; }),
+      withTimeout(fetchOpenDealContactIds().catch(() => new Set()), 45000, new Set()),
+      withTimeout(fetchEventContactIds().catch(() => ({})), 45000, {}),
     ]);
+    console.log(`Deal associations done. openDeals: ${openDealIds.size}, eventContacts: ${Object.keys(eventMap).length}`);
 
     const contacts = raw
       .filter(c => !isAssistant(c.properties.jobtitle))
