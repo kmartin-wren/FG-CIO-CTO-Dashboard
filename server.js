@@ -7,27 +7,25 @@ const PORT = process.env.PORT || 3000;
 const HS_TOKEN = process.env.HUBSPOT_TOKEN;
 
 // Role categories — used for filtering in the frontend
-// Only use single tokens or short phrases valid for HubSpot CONTAINS_TOKEN
 const ROLE_CATEGORIES = {
   cio_cto: [
     'CIO', 'CTO', 'CDO', 'CIDO',
     'Chief Information Officer', 'Chief Technology Officer',
     'Chief Digital Officer', 'Chief AI Officer',
     'Chief Automation Officer', 'Chief Data Officer',
+    'Chief Information & Digital Officer',
     'Digital', 'Artificial Intelligence', 'Automation',
   ],
   chro: [
-    'CHRO',
-    'Chief Human Resources', 'Chief People Officer',
-    'Chief Talent Officer',
-    'VP Human Resources', 'VP People',
+    'CHRO', 'Chief Human Resources', 'Chief People Officer',
   ],
   ceo: [
     'CEO', 'Chief Executive Officer',
   ],
 };
 
-const TITLE_FILTERS = Object.values(ROLE_CATEGORIES).flat();
+// Active fetch set — CIO/CTO only for speed; CHRO/CEO tagged from what's already pulled
+const TITLE_FILTERS = ROLE_CATEGORIES.cio_cto;
 
 function getRoleCategory(title) {
   if (!title) return 'other';
