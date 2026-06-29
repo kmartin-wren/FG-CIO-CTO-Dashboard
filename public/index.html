@@ -663,14 +663,18 @@ function copyForKeith() {
     ? allContacts.filter(c => selectedIds.has(c.id))
     : applySort(applyFilter(allContacts));
 
-  const textable = pool.filter(c => c.mobile && !removedIds.has(c.id));
-  if (!textable.length) { showToast('No contacts with mobile numbers to copy.', 'gray'); return; }
+  const eligible = pool.filter(c => !removedIds.has(c.id));
+  if (!eligible.length) { showToast('No contacts to export.', 'gray'); return; }
 
-  const lines = textable.map(c => `${c.name}, ${c.company}, ${abbreviateTitle(c.title)}, ${c.mobile}`);
+  // Show all in draft — mobile number shown if available, blank if not so you can edit
+  const lines = eligible.map(c => {
+    const phone = c.mobile || c.phone || '—no mobile—';
+    return `${c.name}, ${c.company}, ${abbreviateTitle(c.title)}, ${phone}`;
+  });
   const text = lines.join('\n');
 
-  // Mark as texted immediately (accountability timestamp)
-  markAsTexted(textable.map(c => c.id));
+  // Timestamp immediately for accountability
+  markAsTexted(eligible.map(c => c.id));
   selectedIds.clear();
   updateStats(allContacts);
   render();
@@ -681,7 +685,7 @@ function copyForKeith() {
   ta.value = text;
   panel.style.display = 'block';
   panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  showToast(`${textable.length} contacts — edit then copy`, 'green');
+  showToast(`${eligible.length} contacts in draft — edit then copy`, 'green');
 }
 
 function copyDraft() {
