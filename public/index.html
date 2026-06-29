@@ -445,12 +445,7 @@ function toggleSelect(id) {
 function updateSelCount() {
   const n = selectedIds.size;
   const sc = document.getElementById('sel-count');
-  const btnSel = document.getElementById('btn-export-sel');
-  const selN = document.getElementById('sel-n');
-  sc.style.display = n ? 'inline' : 'none';
-  sc.textContent = `${n} selected`;
-  btnSel.style.display = n ? 'inline-flex' : 'none';
-  if (selN) selN.textContent = n;
+  if (sc) { sc.style.display = n ? 'inline' : 'none'; sc.textContent = `${n} selected`; }
 }
 
 // ── Rendering ────────────────────────────────────────────────────────────────
