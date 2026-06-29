@@ -644,10 +644,7 @@ function buildText(contacts) {
 }
 
 function updateExportPanel(filtered) {
-  const panel = document.getElementById('export-panel');
-  if (panel.style.display === 'block') {
-    document.getElementById('export-text').textContent = buildText(filtered);
-  }
+  // draft panel updates are handled on open, not on every render
 }
 
 function markAsTexted(ids) {
