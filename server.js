@@ -24,8 +24,8 @@ const ROLE_CATEGORIES = {
   ],
 };
 
-// Active fetch set — CIO/CTO only for speed; CHRO/CEO tagged from what's already pulled
-const TITLE_FILTERS = ROLE_CATEGORIES.cio_cto;
+// Fetch CIO/CTO + CHRO; CEO excluded (too broad, pulls 12k+ contacts)
+const TITLE_FILTERS = [...ROLE_CATEGORIES.cio_cto, ...ROLE_CATEGORIES.chro];
 
 function getRoleCategory(title) {
   if (!title) return 'other';
