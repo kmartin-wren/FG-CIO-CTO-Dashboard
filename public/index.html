@@ -120,6 +120,30 @@
 
     .loading{text-align:center;padding:60px;font-size:16px;font-weight:600;color:#777;}
     .error-msg{text-align:center;padding:40px;font-size:15px;font-weight:700;color:#dc2626;}
+
+    /* RSVP tracker */
+    .btn-rsvp{background:#7c2d92;color:#fff;}
+    .btn-rsvp:hover{background:#6b2480;}
+    .btn-rsvp.active{background:#fff;color:#7c2d92;}
+    #rsvp-panel{display:none;background:#fff;border-bottom:2px solid #dde1e8;padding:20px 32px;}
+    #rsvp-panel h2{font-size:17px;font-weight:800;margin-bottom:2px;}
+    #rsvp-panel .rsvp-sub{font-size:13px;color:#666;margin-bottom:14px;}
+    .rsvp-stats{display:flex;gap:22px;flex-wrap:wrap;margin-bottom:16px;}
+    .rsvp-stats .stat-item .num{font-size:22px;}
+    .rsvp-filter{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;}
+    .rsvp-table{width:100%;border-collapse:collapse;font-size:13px;}
+    .rsvp-table th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#888;padding:6px 10px;border-bottom:2px solid #eee;}
+    .rsvp-table td{padding:8px 10px;border-bottom:1px solid #f0f0f2;vertical-align:top;}
+    .rsvp-table tr:hover{background:#fafafa;}
+    .rsvp-name{font-weight:800;}
+    .rsvp-co{color:#555;font-weight:600;}
+    .st-sel{border:1px solid #ccc;border-radius:6px;padding:4px 8px;font-size:12px;font-weight:700;cursor:pointer;}
+    .st-accepted{background:#dcfce7;border-color:#16a34a;color:#15803d;}
+    .st-pending{background:#fef9c3;border-color:#eab308;color:#854d0e;}
+    .st-declined{background:#fee2e2;border-color:#dc2626;color:#991b1b;}
+    .st-no_response{background:#f3f4f6;border-color:#9ca3af;color:#4b5563;}
+    .rsvp-note{font-size:12px;color:#666;max-width:340px;}
+    .rsvp-actions{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;}
   </style>
 </head>
 <body>
@@ -129,6 +153,7 @@
   <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
     <span id="gen-time">Loading from HubSpot…</span>
     <div class="hdr-btns">
+      <button class="btn-hdr btn-rsvp" id="btn-rsvp" onclick="toggleRsvp()">🍇 Scott Cook RSVP</button>
       <button class="btn-hdr btn-check" id="btn-check" onclick="checkNew()">✦ Check New</button>
       <button class="btn-hdr btn-refresh" onclick="refreshData()">↻ Full Refresh</button>
     </div>
@@ -143,6 +168,27 @@
   <div class="stat-item"><div class="num" id="s-f500">—</div><div class="lbl">Fortune 500</div></div>
   <div class="stat-item"><div class="num" id="s-mobile">—</div><div class="lbl">Have Mobile</div></div>
   <div class="stat-item"><div class="num" id="s-total">—</div><div class="lbl">Total</div></div>
+</div>
+
+<div id="rsvp-panel">
+  <h2>🍇 Scott Cook CEO Dinners — Sept 8 & Oct 12, Woodside</h2>
+  <div class="rsvp-sub">Oct 12 co-hosted by Garry Tan (YC) · Auto-seeded from email replies · <span id="rsvp-updated"></span></div>
+  <div class="rsvp-stats" id="rsvp-stats"></div>
+  <div class="rsvp-filter" id="rsvp-filter">
+    <div class="chip active" data-rf="all" onclick="setRsvpFilter(this)">All</div>
+    <div class="chip" data-rf="accepted" onclick="setRsvpFilter(this)">✓ Accepted</div>
+    <div class="chip" data-rf="pending" onclick="setRsvpFilter(this)">⏳ Pending</div>
+    <div class="chip" data-rf="no_response" onclick="setRsvpFilter(this)">📭 No Response</div>
+    <div class="chip" data-rf="declined" onclick="setRsvpFilter(this)">✕ Declined</div>
+  </div>
+  <table class="rsvp-table">
+    <thead><tr><th>Name</th><th>Company</th><th>Status</th><th>Dinner</th><th>Notes</th></tr></thead>
+    <tbody id="rsvp-body"></tbody>
+  </table>
+  <div class="rsvp-actions">
+    <button class="btn btn-dark" onclick="copyRsvpFollowups()">📲 Copy Follow-Up Ping List (No Response)</button>
+    <button class="btn btn-outline" onclick="copyRsvpSummary()">📋 Copy Status Summary for Keith</button>
+  </div>
 </div>
 
 <div class="filter-bar">
@@ -650,6 +696,14 @@ function markAsTexted(ids) {
   const cutoff = Date.now() - 56*24*60*60*1000;
   textedLog = textedLog.filter(e => new Date(e.date).getTime() > cutoff);
   saveTexted();
+  // Write a note to each HubSpot contact record (permanent audit trail)
+  fetch('/api/log-texted', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ contactIds: [...ids] }),
+  }).then(r => r.json()).then(d => {
+    if (d.logged) showToast(`✓ Logged to HubSpot: note added to ${d.logged} contact record${d.logged>1?'s':''}`, 'green');
+  }).catch(() => {});
 }
 
 function copyForKeith() {
@@ -748,6 +802,121 @@ async function checkNew() {
 async function refreshData() {
   await fetch('/api/refresh');
   loadData();
+}
+
+// ── Scott Cook RSVP tracker ───────────────────────────────────────────────────
+
+let rsvpData = null;
+let rsvpFilter = 'all';
+
+async function toggleRsvp() {
+  const panel = document.getElementById('rsvp-panel');
+  const btn = document.getElementById('btn-rsvp');
+  const vis = panel.style.display === 'block';
+  if (vis) { panel.style.display = 'none'; btn.classList.remove('active'); return; }
+  if (!rsvpData) {
+    const res = await fetch('/api/rsvp');
+    rsvpData = await res.json();
+  }
+  renderRsvp();
+  panel.style.display = 'block';
+  btn.classList.add('active');
+  panel.scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+function setRsvpFilter(el) {
+  document.querySelectorAll('#rsvp-filter .chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  rsvpFilter = el.dataset.rf;
+  renderRsvp();
+}
+
+const RSVP_LABELS = { accepted: '✓ Accepted', pending: '⏳ Pending', declined: '✕ Declined', no_response: '📭 No Response' };
+const DINNER_LABELS = { sept8: 'Sept 8', oct12: 'Oct 12', '': '—' };
+
+function renderRsvp() {
+  if (!rsvpData) return;
+  const inv = rsvpData.invitees;
+  const counts = { accepted: 0, pending: 0, declined: 0, no_response: 0 };
+  inv.forEach(i => counts[i.status] = (counts[i.status] || 0) + 1);
+  const sept8 = inv.filter(i => i.status === 'accepted' && i.dinner === 'sept8').length;
+  const oct12 = inv.filter(i => i.status === 'accepted' && i.dinner === 'oct12').length;
+
+  document.getElementById('rsvp-stats').innerHTML = `
+    <div class="stat-item"><div class="num" style="color:#16a34a">${sept8}</div><div class="lbl">Sept 8 Confirmed</div></div>
+    <div class="stat-item"><div class="num" style="color:#16a34a">${oct12}</div><div class="lbl">Oct 12 Confirmed</div></div>
+    <div class="stat-item"><div class="num" style="color:#eab308">${counts.pending}</div><div class="lbl">Pending</div></div>
+    <div class="stat-item"><div class="num">${counts.no_response}</div><div class="lbl">No Response</div></div>
+    <div class="stat-item"><div class="num" style="color:#dc2626">${counts.declined}</div><div class="lbl">Declined</div></div>
+    <div class="stat-item"><div class="num">${inv.length}</div><div class="lbl">Total Invited</div></div>`;
+  document.getElementById('rsvp-updated').textContent = `Updated ${new Date(rsvpData.updatedAt).toLocaleString()}`;
+
+  const order = { accepted: 0, pending: 1, no_response: 2, declined: 3 };
+  const rows = inv
+    .filter(i => rsvpFilter === 'all' || i.status === rsvpFilter)
+    .sort((a,b) => (order[a.status]??9) - (order[b.status]??9) || a.name.localeCompare(b.name))
+    .map(i => `
+      <tr>
+        <td class="rsvp-name">${i.name}</td>
+        <td class="rsvp-co">${i.company}<div style="font-size:11px;color:#999;">${i.title||''}</div></td>
+        <td>
+          <select class="st-sel st-${i.status}" onchange="updateRsvp('${i.email}','${i.name.replace(/'/g,"\\'")}',{status:this.value})">
+            ${Object.entries(RSVP_LABELS).map(([k,v]) => `<option value="${k}" ${i.status===k?'selected':''}>${v}</option>`).join('')}
+          </select>
+        </td>
+        <td>
+          <select class="st-sel" onchange="updateRsvp('${i.email}','${i.name.replace(/'/g,"\\'")}',{dinner:this.value})">
+            ${Object.entries(DINNER_LABELS).map(([k,v]) => `<option value="${k}" ${i.dinner===k?'selected':''}>${v}</option>`).join('')}
+          </select>
+        </td>
+        <td class="rsvp-note">${i.note||''}</td>
+      </tr>`).join('');
+  document.getElementById('rsvp-body').innerHTML = rows || '<tr><td colspan="5" style="color:#999;padding:20px;">No invitees match.</td></tr>';
+}
+
+async function updateRsvp(email, name, changes) {
+  await fetch('/api/rsvp', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ email, name, ...changes }),
+  });
+  const inv = rsvpData.invitees.find(i => i.email === email || i.name === name);
+  if (inv) Object.assign(inv, changes);
+  renderRsvp();
+  showToast('✓ RSVP updated', 'green');
+}
+
+function copyRsvpFollowups() {
+  const noResp = rsvpData.invitees.filter(i => i.status === 'no_response');
+  const lines = noResp.map(i => {
+    const c = allContacts.find(x => x.name.toLowerCase() === i.name.toLowerCase());
+    const mobile = c?.mobile || 'no mobile on file';
+    return `${i.name}, ${i.company}, ${abbreviateTitle(i.title)||i.title}, ${mobile}`;
+  });
+  navigator.clipboard.writeText(lines.join('\n')).then(() =>
+    showToast(`✓ Copied ${lines.length} non-responders for follow-up`, 'green'));
+}
+
+function copyRsvpSummary() {
+  const inv = rsvpData.invitees;
+  const grp = s => inv.filter(i => i.status === s);
+  const fmt = i => `• ${i.name} (${i.company})${i.dinner ? ' — ' + DINNER_LABELS[i.dinner] : ''}${i.note ? ' — ' + i.note : ''}`;
+  const text = `SCOTT COOK DINNERS — Sept 8 & Oct 12 Woodside
+${'═'.repeat(50)}
+
+✓ CONFIRMED (${grp('accepted').length})
+${grp('accepted').map(fmt).join('\n') || '—'}
+
+⏳ PENDING (${grp('pending').length})
+${grp('pending').map(fmt).join('\n') || '—'}
+
+📭 NO RESPONSE (${grp('no_response').length})
+${grp('no_response').map(i => `• ${i.name} (${i.company})`).join('\n') || '—'}
+
+✕ DECLINED (${grp('declined').length})
+${grp('declined').map(fmt).join('\n') || '—'}`;
+  navigator.clipboard.writeText(text).then(() =>
+    showToast('✓ Status summary copied for Keith', 'green'));
 }
 
 loadData();

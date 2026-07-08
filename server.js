@@ -1,6 +1,9 @@
 const express = require('express');
 const path = require('path');
+const fs = require('fs');
 const { getFortunRank } = require('./fortune500');
+
+const RSVP_FILE = path.join(__dirname, 'rsvp-data.json');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -322,6 +325,66 @@ async function fetchNewContacts(sinceDate) {
 }
 
 app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.json());
+
+// ── Scott Cook RSVP tracker ──────────────────────────────────────────────────
+app.get('/api/rsvp', (req, res) => {
+  try {
+    res.json(JSON.parse(fs.readFileSync(RSVP_FILE, 'utf8')));
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.post('/api/rsvp', (req, res) => {
+  try {
+    const data = JSON.parse(fs.readFileSync(RSVP_FILE, 'utf8'));
+    const { email, name, status, dinner, note } = req.body;
+    let inv = data.invitees.find(i =>
+      (email && i.email.toLowerCase() === email.toLowerCase()) ||
+      (name && i.name.toLowerCase() === name.toLowerCase()));
+    if (!inv) {
+      inv = { name: name || '', company: req.body.company || '', title: req.body.title || '', email: email || '', status: 'no_response', dinner: '', note: '' };
+      data.invitees.push(inv);
+    }
+    if (status !== undefined) inv.status = status;
+    if (dinner !== undefined) inv.dinner = dinner;
+    if (note !== undefined) inv.note = note;
+    data.updatedAt = new Date().toISOString();
+    fs.writeFileSync(RSVP_FILE, JSON.stringify(data, null, 2));
+    res.json({ ok: true, invitee: inv });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ── HubSpot note writeback for texted log ────────────────────────────────────
+app.post('/api/log-texted', async (req, res) => {
+  const { contactIds } = req.body;
+  if (!Array.isArray(contactIds) || !contactIds.length) return res.json({ ok: true, logged: 0 });
+  const stamp = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+  let logged = 0, failed = 0;
+  for (const id of contactIds) {
+    try {
+      await hsPost('/crm/v3/objects/notes', {
+        properties: {
+          hs_note_body: `📲 Added to Keith's texting list — ${stamp} (via C-Suite 1000 dashboard)`,
+          hs_timestamp: Date.now(),
+        },
+        associations: [{
+          to: { id },
+          types: [{ associationCategory: 'HUBSPOT_DEFINED', associationTypeId: 202 }],
+        }],
+      });
+      logged++;
+      await sleep(150);
+    } catch (e) {
+      failed++;
+      if (failed === 1) console.warn('Note writeback failed:', e.message);
+    }
+  }
+  res.json({ ok: true, logged, failed });
+});
 
 app.get('/api/contacts', async (req, res) => {
   try {
