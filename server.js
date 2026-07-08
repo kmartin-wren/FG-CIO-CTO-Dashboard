@@ -27,8 +27,26 @@ const ROLE_CATEGORIES = {
   ],
 };
 
-// Fetch CIO/CTO + CHRO; CEO excluded (too broad, pulls 12k+ contacts)
-const TITLE_FILTERS = [...ROLE_CATEGORIES.cio_cto, ...ROLE_CATEGORIES.chro];
+// Fetch by title AND by relationship signal. CEO titles are included but
+// filtered server-side (keep only Fortune-ranked or signal-bearing) to avoid
+// pulling thousands of small-company CEOs.
+const TITLE_FILTERS = [...ROLE_CATEGORIES.cio_cto, ...ROLE_CATEGORIES.chro, ...ROLE_CATEGORIES.ceo];
+
+// Relationship-signal filters — people Keith already has history with,
+// regardless of title: RQ-scored, met at an event, or on the text list.
+const SIGNAL_FILTER_GROUPS = [
+  { filters: [{ propertyName: 'rqkf__c', operator: 'HAS_PROPERTY' }] },
+  { filters: [{ propertyName: 'how_keith_s_met_him', operator: 'HAS_PROPERTY' }] },
+  { filters: [{ propertyName: 'num_associated_deals', operator: 'GT', value: '0' }] },
+];
+
+// Server-side keep rule: broad-title contacts (CEO/other) must earn their spot
+function keepContact(c) {
+  const hasSignal = c.rqScore || c.howMet || c.hasAnyDeal || c.hasOpenDeal ||
+    c.events.ric || c.events.ceo_dinner || c.events.scott_cook;
+  if (c.roleCategory === 'cio_cto' || c.roleCategory === 'chro') return true;
+  return !!(c.fortuneRank || hasSignal);
+}
 
 function getRoleCategory(title) {
   if (!title) return 'other';
@@ -132,9 +150,12 @@ async function hsGet(url, retries = 6) {
 
 async function fetchAllContacts() {
   const all = [], seen = new Set();
-  const filterGroups = TITLE_FILTERS.map(t => ({
-    filters: [{ propertyName: 'jobtitle', operator: 'CONTAINS_TOKEN', value: t }],
-  }));
+  const filterGroups = [
+    ...TITLE_FILTERS.map(t => ({
+      filters: [{ propertyName: 'jobtitle', operator: 'CONTAINS_TOKEN', value: t }],
+    })),
+    ...SIGNAL_FILTER_GROUPS,
+  ];
   const BATCH = 5;
   for (let i = 0; i < filterGroups.length; i += BATCH) {
     if (i > 0) await sleep(700);
@@ -408,7 +429,9 @@ app.get('/api/contacts', async (req, res) => {
       .filter(c => !isAssistant(c.properties.jobtitle))
       .map(c => shapeContact(c, openDealIds, eventMap))
       .filter(c => c.name)
+      .filter(keepContact)
       .sort((a, b) => b.priority - a.priority);
+    console.log(`Kept ${contacts.length} of ${raw.length} after relationship-signal filter.`);
 
     lastFullFetchDate = new Date();
     cache = { contacts, generatedAt: new Date().toISOString(), newCount: 0 };
