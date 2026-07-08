@@ -34,8 +34,9 @@ const TITLE_FILTERS = [...ROLE_CATEGORIES.cio_cto, ...ROLE_CATEGORIES.chro, ...R
 
 // Relationship-signal filters — people Keith already has history with,
 // regardless of title: RQ-scored, met at an event, or on the text list.
+// NOTE: rqkf__c HAS_PROPERTY intentionally excluded — it matches 35k+ contacts
+// (set portal-wide), which is no signal at all and breaks HubSpot's 10k paging cap.
 const SIGNAL_FILTER_GROUPS = [
-  { filters: [{ propertyName: 'rqkf__c', operator: 'HAS_PROPERTY' }] },
   { filters: [{ propertyName: 'how_keith_s_met_him', operator: 'HAS_PROPERTY' }] },
   { filters: [{ propertyName: 'num_associated_deals', operator: 'GT', value: '0' }] },
 ];
@@ -160,17 +161,24 @@ async function fetchAllContacts() {
   for (let i = 0; i < filterGroups.length; i += BATCH) {
     if (i > 0) await sleep(700);
     const batch = filterGroups.slice(i, i + BATCH);
-    let after;
-    do {
-      const body = { filterGroups: batch, properties: CONTACT_PROPS, limit: 100 };
-      if (after) body.after = after;
-      const data = await hsPost('/crm/v3/objects/contacts/search', body);
-      for (const c of data.results || []) {
-        if (!seen.has(c.id)) { seen.add(c.id); all.push(c); }
-      }
-      after = data.paging?.next?.after;
-      if (after) await sleep(400);
-    } while (after);
+    let after, fetched = 0;
+    try {
+      do {
+        const body = { filterGroups: batch, properties: CONTACT_PROPS, limit: 100 };
+        if (after) body.after = after;
+        const data = await hsPost('/crm/v3/objects/contacts/search', body);
+        for (const c of data.results || []) {
+          if (!seen.has(c.id)) { seen.add(c.id); all.push(c); }
+        }
+        fetched += (data.results || []).length;
+        after = data.paging?.next?.after;
+        // HubSpot search hard-caps pagination at 10k results per query
+        if (fetched >= 9900) { console.warn(`Batch ${i / BATCH} hit 10k paging cap — truncating.`); break; }
+        if (after) await sleep(400);
+      } while (after);
+    } catch (e) {
+      console.warn(`Batch ${i / BATCH} failed (${e.message.slice(0, 80)}) — continuing with ${fetched} fetched.`);
+    }
   }
   return all;
 }
