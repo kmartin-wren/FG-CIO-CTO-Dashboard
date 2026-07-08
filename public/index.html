@@ -25,7 +25,8 @@
 
     /* FILTERS — single-select OR logic */
     .filter-bar{background:#fff;border-bottom:1px solid #dde1e8;padding:12px 32px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;}
-    .filter-bar label{font-size:10px;font-weight:800;color:#aaa;text-transform:uppercase;letter-spacing:.8px;margin-right:2px;white-space:nowrap;}
+    .filter-bar label{font-size:10px;font-weight:800;color:#6b7280;text-transform:uppercase;letter-spacing:.8px;margin-right:2px;white-space:nowrap;}
+    :focus-visible{outline:2px solid #2563eb;outline-offset:2px;border-radius:4px;}
     .chip{padding:6px 14px;border-radius:20px;border:2px solid #dde1e8;background:#f5f6f8;color:#333;font-size:13px;font-weight:700;cursor:pointer;transition:all .15s;user-select:none;white-space:nowrap;}
     .chip:hover{border-color:#1a1a2e;color:#1a1a2e;}
     .chip.active{background:#1a1a2e;color:#fff;border-color:#1a1a2e;}
@@ -109,7 +110,7 @@
     .phone-pill{border-radius:18px;padding:6px 13px;font-size:14px;font-weight:800;text-align:right;}
     .ph-mobile{background:#eff6ff;color:#1d4ed8;border:2px solid #93c5fd;}
     .ph-none{background:#fef9c3;color:#854d0e;border:2px solid #fcd34d;font-size:12px;padding:4px 10px;}
-    .phone-type{font-size:11px;font-weight:700;color:#888;text-transform:uppercase;}
+    .phone-type{font-size:11px;font-weight:700;color:#666;text-transform:uppercase;}
 
     /* Text draft panel */
     #draft-panel{display:none;background:#fff;border:2px solid #1a1a2e;border-radius:12px;margin:0 32px 24px;padding:22px;}
@@ -132,7 +133,7 @@
     .rsvp-stats .stat-item .num{font-size:22px;}
     .rsvp-filter{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;}
     .rsvp-table{width:100%;border-collapse:collapse;font-size:13px;}
-    .rsvp-table th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#888;padding:6px 10px;border-bottom:2px solid #eee;}
+    .rsvp-table th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#666;padding:6px 10px;border-bottom:2px solid #eee;}
     .rsvp-table td{padding:8px 10px;border-bottom:1px solid #f0f0f2;vertical-align:top;}
     .rsvp-table tr:hover{background:#fafafa;}
     .rsvp-name{font-weight:800;}
@@ -235,6 +236,9 @@
 
 <div class="toolbar">
   <div class="toolbar-left">
+    <input type="search" id="search-box" placeholder="🔍 Search name, company, title…" aria-label="Search contacts"
+      style="border:1px solid #ccc;border-radius:8px;padding:8px 12px;font-size:13px;width:240px;"
+      oninput="searchQuery=this.value.toLowerCase().trim();renderLimit=500;render()">
     <span class="result-count" id="result-count">Loading…</span>
     <span class="selected-count" id="sel-count"></span>
     <select class="sort-sel" id="sort-sel" onchange="render()">
@@ -258,8 +262,9 @@
   <p>Edit below before copying — then paste into iMessage</p>
   <textarea id="draft-text" spellcheck="false"></textarea>
   <div class="draft-actions">
-    <button class="btn btn-dark" onclick="copyDraft()">📋 Copy</button>
-    <button class="btn btn-outline" onclick="document.getElementById('draft-panel').style.display='none'">✕ Close</button>
+    <button class="btn btn-dark" onclick="copyDraft()">📋 Copy & Log as Texted</button>
+    <button class="btn btn-outline" onclick="pendingTextedIds=[];document.getElementById('draft-panel').style.display='none'">✕ Close (don't log)</button>
+    <button class="btn btn-outline" onclick="undoLastLog()">↩ Undo Last Log</button>
   </div>
 </div>
 
@@ -369,7 +374,12 @@ function getMetro(contact) {
   const state = (contact.state || '').toLowerCase().trim();
   if (!city && !state) return null;
   for (const [key, metro] of Object.entries(METROS)) {
-    if (metro.cities.some(c => city.includes(c) || c.includes(city) && city.length > 3)) return key;
+    // Exact match always; substring match only for names long enough to be unambiguous
+    // (prevents "la" matching Atlanta/Dallas/Oakland)
+    if (metro.cities.some(c =>
+      city === c ||
+      (c.length > 3 && city.includes(c)) ||
+      (city.length > 3 && c.includes(city)))) return key;
   }
   return city || state ? 'other' : null;
 }
@@ -377,6 +387,7 @@ function getMetro(contact) {
 let allContacts = [];
 let activeFilter = 'all';
 let activeMetro  = '';
+let searchQuery  = '';
 let selectedIds = new Set();
 let removedIds  = new Set(JSON.parse(localStorage.getItem('fg-removed')  || '[]'));
 let textedLog   = JSON.parse(localStorage.getItem('fg-texted-log') || '[]');
@@ -515,6 +526,11 @@ function cardClass(c) {
   return '';
 }
 
+function esc(s) {
+  return String(s ?? '').replace(/[&<>"']/g, ch =>
+    ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[ch]);
+}
+
 function renderCard(c) {
   const isRemoved  = removedIds.has(c.id);
   const isSelected = selectedIds.has(c.id);
@@ -561,11 +577,11 @@ function renderCard(c) {
     <div class="card ${cardClass(c)}${isSelected?' sel':''}" data-id="${c.id}">
       <input type="checkbox" class="card-cb" ${isSelected?'checked':''} onchange="toggleSelect('${c.id}')">
       <div>
-        <div class="card-name">${c.name}</div>
-        <div class="card-sub"><span class="co">${c.company||'—'}</span>${f1k}${rq}${c.title?' · '+c.title:''}${cityDisp}</div>
+        <div class="card-name">${esc(c.name)}</div>
+        <div class="card-sub"><span class="co">${esc(c.company)||'—'}</span>${f1k}${rq}${c.title?' · '+esc(c.title):''}${cityDisp}</div>
         <div class="card-badges">${badges.join('')}</div>
-        ${c.howMet ? `<div style="font-size:12px;color:#7c2d92;font-weight:600;margin-bottom:5px;">🤝 ${c.howMet}</div>` : ''}
-        <div class="card-export">${exportLine}</div>
+        ${c.howMet ? `<div style="font-size:12px;color:#7c2d92;font-weight:600;margin-bottom:5px;">🤝 ${esc(c.howMet)}</div>` : ''}
+        <div class="card-export">${esc(exportLine)}</div>
         <div class="card-actions">${sentBtn}${removeBtn}</div>
       </div>
       <div class="card-right">
@@ -601,6 +617,12 @@ function applyFilter(contacts) {
     default:          result = contacts.filter(c => !removedIds.has(c.id));
   }
   if (activeMetro) result = result.filter(c => getMetro(c) === activeMetro);
+  if (searchQuery) {
+    result = result.filter(c =>
+      c.name.toLowerCase().includes(searchQuery) ||
+      (c.company || '').toLowerCase().includes(searchQuery) ||
+      (c.title || '').toLowerCase().includes(searchQuery));
+  }
   return result;
 }
 
@@ -733,11 +755,8 @@ function copyForKeith() {
   });
   const text = lines.join('\n');
 
-  // Timestamp immediately for accountability
-  markAsTexted(eligible.map(c => c.id));
-  selectedIds.clear();
-  updateStats(allContacts);
-  render();
+  // Stage the batch — nothing is logged until the user actually copies
+  pendingTextedIds = eligible.map(c => c.id);
 
   // Open editable draft panel
   const panel = document.getElementById('draft-panel');
@@ -745,14 +764,32 @@ function copyForKeith() {
   ta.value = text;
   panel.style.display = 'block';
   panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  showToast(`${eligible.length} contacts in draft — edit then copy`, 'green');
+  showToast(`${eligible.length} contacts in draft — edit, then Copy to log them as texted`, 'green');
 }
+
+let pendingTextedIds = [];
 
 function copyDraft() {
   const ta = document.getElementById('draft-text');
   navigator.clipboard.writeText(ta.value).then(() => {
-    showToast('✓ Copied — paste into iMessage', 'green');
+    if (pendingTextedIds.length) {
+      markAsTexted(pendingTextedIds);
+      pendingTextedIds = [];
+      selectedIds.clear();
+      updateStats(allContacts);
+      render();
+    }
+    showToast('✓ Copied & logged as texted — paste into iMessage', 'green');
   });
+}
+
+function undoLastLog() {
+  if (!textedLog.length) { showToast('Nothing to undo.', 'gray'); return; }
+  const last = textedLog.pop();
+  saveTexted();
+  updateStats(allContacts);
+  render();
+  showToast(`↩ Unlogged ${last.ids.length} contacts (${last.label})`, 'green');
 }
 
 function exportSelected() { // kept as no-op for safety
@@ -771,7 +808,7 @@ function showToast(msg, type='green') {
 // ── Data loading ───────────────────────────────────────────────────────────────
 
 async function loadData() {
-  document.getElementById('contact-list').innerHTML = '<div class="loading">Pulling live data from HubSpot — first load ~30 seconds…</div>';
+  document.getElementById('contact-list').innerHTML = '<div class="loading">Pulling live data from HubSpot — cold load takes 2–4 minutes, cached loads are instant…</div>';
   try {
     const res = await fetch('/api/contacts');
     if (!res.ok) throw new Error(`Server error ${res.status}`);
@@ -782,7 +819,9 @@ async function loadData() {
     updateStats(allContacts);
     render();
   } catch(err) {
-    document.getElementById('contact-list').innerHTML = `<div class="error-msg">Error: ${err.message}</div>`;
+    document.getElementById('contact-list').innerHTML =
+      `<div class="error-msg">Couldn't load contacts: ${esc(err.message)}<br>
+       <button class="btn btn-dark" style="margin-top:12px;" onclick="loadData()">↻ Try Again</button></div>`;
     document.getElementById('gen-time').textContent = 'Failed to load';
   }
 }
@@ -811,9 +850,19 @@ async function checkNew() {
 }
 
 async function refreshData() {
+  if (!confirm('Full refresh re-pulls everything from HubSpot (takes a few minutes). Continue?')) return;
   await fetch('/api/refresh');
   loadData();
 }
+
+// Make the div-based filter chips keyboard-accessible
+document.querySelectorAll('.chip').forEach(el => {
+  el.tabIndex = 0;
+  el.setAttribute('role', 'button');
+  el.addEventListener('keydown', e => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); el.click(); }
+  });
+});
 
 // ── Scott Cook RSVP tracker ───────────────────────────────────────────────────
 
@@ -868,8 +917,8 @@ function renderRsvp() {
     .sort((a,b) => (order[a.status]??9) - (order[b.status]??9) || a.name.localeCompare(b.name))
     .map(i => `
       <tr>
-        <td class="rsvp-name">${i.name}</td>
-        <td class="rsvp-co">${i.company}<div style="font-size:11px;color:#999;">${i.title||''}</div></td>
+        <td class="rsvp-name">${esc(i.name)}</td>
+        <td class="rsvp-co">${esc(i.company)}<div style="font-size:11px;color:#767676;">${esc(i.title)}</div></td>
         <td>
           <select class="st-sel st-${i.status}" onchange="updateRsvp('${i.email}','${i.name.replace(/'/g,"\\'")}',{status:this.value})">
             ${Object.entries(RSVP_LABELS).map(([k,v]) => `<option value="${k}" ${i.status===k?'selected':''}>${v}</option>`).join('')}
@@ -880,21 +929,27 @@ function renderRsvp() {
             ${Object.entries(DINNER_LABELS).map(([k,v]) => `<option value="${k}" ${i.dinner===k?'selected':''}>${v}</option>`).join('')}
           </select>
         </td>
-        <td class="rsvp-note">${i.note||''}</td>
+        <td class="rsvp-note">${esc(i.note)}</td>
       </tr>`).join('');
   document.getElementById('rsvp-body').innerHTML = rows || '<tr><td colspan="5" style="color:#999;padding:20px;">No invitees match.</td></tr>';
 }
 
 async function updateRsvp(email, name, changes) {
-  await fetch('/api/rsvp', {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({ email, name, ...changes }),
-  });
-  const inv = rsvpData.invitees.find(i => i.email === email || i.name === name);
-  if (inv) Object.assign(inv, changes);
-  renderRsvp();
-  showToast('✓ RSVP updated', 'green');
+  try {
+    const res = await fetch('/api/rsvp', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ email, name, ...changes }),
+    });
+    if (!res.ok) throw new Error(`server ${res.status}`);
+    const inv = rsvpData.invitees.find(i => i.email === email || i.name === name);
+    if (inv) Object.assign(inv, changes);
+    renderRsvp();
+    showToast('✓ RSVP updated', 'green');
+  } catch (e) {
+    renderRsvp(); // reset the dropdown to saved state
+    showToast(`⚠ RSVP save failed (${e.message}) — change not saved`, 'gray');
+  }
 }
 
 function copyRsvpFollowups() {
