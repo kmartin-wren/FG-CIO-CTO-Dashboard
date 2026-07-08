@@ -428,8 +428,8 @@ app.get('/api/contacts', async (req, res) => {
       Promise.race([p, new Promise(r => setTimeout(() => r(fallback), ms))]);
 
     const [openDealIds, eventMap] = await Promise.all([
-      withTimeout(fetchOpenDealContactIds().catch(() => new Set()), 45000, new Set()),
-      withTimeout(fetchEventContactIds().catch(() => ({})), 45000, {}),
+      withTimeout(fetchOpenDealContactIds().catch(() => new Set()), 120000, new Set()),
+      withTimeout(fetchEventContactIds().catch(() => ({})), 120000, {}),
     ]);
     console.log(`Deal associations done. openDeals: ${openDealIds.size}, eventContacts: ${Object.keys(eventMap).length}`);
 

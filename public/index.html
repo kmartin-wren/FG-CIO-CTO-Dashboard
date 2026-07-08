@@ -607,6 +607,7 @@ function applyFilter(contacts) {
 function onMetroChange(sel) {
   activeMetro = sel.value;
   sel.classList.toggle('active', !!activeMetro);
+  renderLimit = 500;
   render();
 }
 
@@ -622,21 +623,30 @@ function applySort(contacts) {
 }
 
 function setFilter(el) {
-  document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+  document.querySelectorAll('.filter-bar .chip').forEach(c => c.classList.remove('active'));
   el.classList.add('active');
   activeFilter = el.dataset.f;
+  renderLimit = 500;
   render();
 }
 
+let renderLimit = 500;
+
 function render() {
   const filtered = applySort(applyFilter(allContacts));
-  document.getElementById('result-count').textContent = `Showing ${filtered.length} of ${allContacts.length} contacts`;
-  document.getElementById('contact-list').innerHTML = filtered.length
-    ? filtered.map(renderCard).join('')
+  const shown = filtered.slice(0, renderLimit);
+  document.getElementById('result-count').textContent =
+    `Showing ${shown.length}${filtered.length > shown.length ? ` of ${filtered.length}` : ''} contacts (${allContacts.length} total)`;
+  const moreBtn = filtered.length > renderLimit
+    ? `<button class="btn btn-outline" style="margin:10px auto;display:block;" onclick="renderLimit+=500;render()">⬇ Show 500 more (${filtered.length - renderLimit} remaining)</button>`
+    : '';
+  document.getElementById('contact-list').innerHTML = shown.length
+    ? shown.map(renderCard).join('') + moreBtn
     : '<div class="loading">No contacts match this filter.</div>';
-  updateExportPanel(filtered);
   updateSelCount();
 }
+
+function setFilterAndResetLimit() { renderLimit = 500; }
 
 // ── Stats ──────────────────────────────────────────────────────────────────────
 
