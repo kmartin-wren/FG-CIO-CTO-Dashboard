@@ -151,16 +151,20 @@ async function hsGet(url, retries = 6) {
 
 async function fetchAllContacts() {
   const all = [], seen = new Set();
-  const filterGroups = [
-    ...TITLE_FILTERS.map(t => ({
-      filters: [{ propertyName: 'jobtitle', operator: 'CONTAINS_TOKEN', value: t }],
-    })),
-    ...SIGNAL_FILTER_GROUPS,
-  ];
+  const titleGroup = t => ({ filters: [{ propertyName: 'jobtitle', operator: 'CONTAINS_TOKEN', value: t }] });
+
+  // Build batches so no single search-query union can exceed HubSpot's 10k paging cap.
+  // Narrow titles batch together; each broad CEO term and the signal groups get their own query.
+  const narrowTitles = [...ROLE_CATEGORIES.cio_cto, ...ROLE_CATEGORIES.chro].map(titleGroup);
+  const batches = [];
   const BATCH = 5;
-  for (let i = 0; i < filterGroups.length; i += BATCH) {
+  for (let i = 0; i < narrowTitles.length; i += BATCH) batches.push(narrowTitles.slice(i, i + BATCH));
+  for (const t of ROLE_CATEGORIES.ceo) batches.push([titleGroup(t)]);
+  batches.push(SIGNAL_FILTER_GROUPS);
+
+  for (let i = 0; i < batches.length; i++) {
     if (i > 0) await sleep(700);
-    const batch = filterGroups.slice(i, i + BATCH);
+    const batch = batches[i];
     let after, fetched = 0;
     try {
       do {
@@ -173,11 +177,11 @@ async function fetchAllContacts() {
         fetched += (data.results || []).length;
         after = data.paging?.next?.after;
         // HubSpot search hard-caps pagination at 10k results per query
-        if (fetched >= 9900) { console.warn(`Batch ${i / BATCH} hit 10k paging cap — truncating.`); break; }
+        if (fetched >= 9900) { console.warn(`Batch ${i} hit 10k paging cap — truncating.`); break; }
         if (after) await sleep(400);
       } while (after);
     } catch (e) {
-      console.warn(`Batch ${i / BATCH} failed (${e.message.slice(0, 80)}) — continuing with ${fetched} fetched.`);
+      console.warn(`Batch ${i} failed (${e.message.slice(0, 80)}) — continuing with ${fetched} fetched.`);
     }
   }
   return all;
