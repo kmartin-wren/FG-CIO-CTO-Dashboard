@@ -401,7 +401,7 @@ app.post('/api/log-texted', async (req, res) => {
     try {
       await hsPost('/crm/v3/objects/notes', {
         properties: {
-          hs_note_body: `📲 Added to Keith's texting list — ${stamp} (via C-Suite 1000 dashboard)`,
+          hs_note_body: `📲 KM: Added to Keith's texting list — ${stamp} (Kyrrha's relationship dashboard)`,
           hs_timestamp: Date.now(),
         },
         associations: [{
